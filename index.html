@@ -146,6 +146,16 @@
   .two { display: grid; grid-template-columns: 1fr 1fr; gap: 0 24px; }
   @media (max-width: 600px) { .two { grid-template-columns: 1fr; } .row, .row.topicrow { grid-template-columns: 110px 1fr auto; } .row.topicrow .btn { grid-column: 1 / -1; justify-self: start; } }
 
+  .pattern { background: var(--bg); border-left: 3px solid var(--accent); border-radius: 0 10px 10px 0; padding: 10px 14px; font-size: 14.5px; text-align: left; }
+  .pattern + .pattern { margin-top: 8px; }
+  #patternPre { margin-top: 14px; }
+  .pattern .p-name { font-weight: 700; }
+  .pattern code { display: block; font-family: inherit; font-weight: 600; color: var(--accent); margin: 2px 0 4px; }
+  .pattern p { margin: 0; color: var(--muted); }
+  .pattern .p-ex { font-style: italic; margin-top: 2px; }
+  .lvlprog { background: var(--bg); border-radius: 12px; padding: 14px 16px; text-align: left; margin-top: 4px; }
+  .lvlprog .top { display: flex; justify-content: space-between; gap: 10px; font-size: 14.5px; margin-bottom: 8px; flex-wrap: wrap; }
+  .lvlprog .hist { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
   footer { margin-top: 22px; color: var(--muted); font-size: 13px; display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
   footer button { background: none; border: none; color: inherit; font: inherit; cursor: pointer; text-decoration: underline; padding: 0; }
   kbd { font-family: inherit; font-size: 12px; border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 5px; padding: 0 5px; }
@@ -190,10 +200,12 @@
           <button class="btn" id="main">Kontrol et</button>
         </div>
         <div class="tools">
+          <button class="btn ghost" id="patternBtn">Kalıbı gör</button>
           <button class="btn ghost" id="hintBtn">İpucu</button>
           <button class="btn ghost" id="revealBtn">Cevabı göster</button>
           <button class="btn ghost" id="skipBtn">Atla</button>
         </div>
+        <div id="patternPre" hidden></div>
         <section class="result" id="result" aria-live="polite">
           <div class="verdict" id="verdict"></div>
           <div class="label">Senin cevabın</div>
@@ -201,6 +213,8 @@
           <div class="label">Doğru cevap</div>
           <div class="answer" id="correct"></div>
           <ul class="notes" id="notes"></ul>
+          <div class="label">Bu cümlenin kalıbı</div>
+          <div id="patternPost"></div>
           <details id="alts"><summary></summary><ul id="altList"></ul></details>
           <div class="legend">
             <span class="tok eq">doğru</span><span class="tok sub">yanlış kelime</span><span class="tok typo">yazım hatası</span>
@@ -452,7 +466,116 @@ const LEVEL_NAMES = { A1: "Başlangıç", A2: "Temel", B1: "Orta", B2: "İyi", C
 const ROUND = 20;
 
 const ALL = [], BY = {};
-for (const l of LEVELS) for (const [tr, raw, t] of BANK[l]) { const s = { id: tr, l, tr, raw, t }; ALL.push(s); BY[tr] = s; }
+for (const l of LEVELS) for (const [tr, raw, t] of BANK[l]) { const s = { id: tr, l, tr, raw, t, g: tr }; ALL.push(s); BY[tr] = s; }
+
+/* ================= Soru üreteci =================
+   Her kalıp, parçaların birleşimiyle çok sayıda cümle üretir. $0, $1, $2 = parçalar: [Türkçe, İngilizce] */
+const P = [["Babam", "my {father|dad}"], ["Annem", "my {mother|mom|mum}"], ["Arkadaşım", "my friend"], ["Komşum", "my neighbor"], ["Öğretmenim", "my teacher"]];
+const MOM = "my {mother|mom|mum}", WV = "{will|am going to}";
+const TRAITS = [["zeki", "{intelligent|smart|clever}"], ["çalışkan", "hardworking"], ["kibar", "{kind|polite}"], ["cömert", "generous"], ["dürüst", "honest"], ["yetenekli", "talented"]];
+const FRAMES = [
+  // A1
+  { l: "A1", t: "be", tr: "$0 çok $1.", en: ["$0 is very $1."], s: [[["Bu araba", "this car"], ["Şu ev", "that house"], ["Bu oda", "this room"], ["Bu çanta", "this bag"], ["Bu masa", "this table"], ["Bahçemiz", "our garden"], ["Arabamız", "our car"], ["Odam", "my room"]], [["büyük", "{big|large}"], ["küçük", "{small|little}"], ["güzel", "{beautiful|nice|pretty}"], ["eski", "old"], ["temiz", "clean"], ["yeni", "new"]]] },
+  { l: "A1", t: "be", tr: "$0 bir $1.", en: ["$0 is $1."], s: [[...P.slice(0, 4), ["Amcam", "my uncle"], ["Teyzem", "my aunt"]], [["doktor", "a doctor"], ["mühendis", "an engineer"], ["öğretmen", "a teacher"], ["hemşire", "a nurse"], ["şoför", "a driver"], ["aşçı", "a cook"], ["avukat", "a lawyer"], ["garson", "a waiter"]]] },
+  { l: "A1", t: "gz", tr: "$0 $1.", en: ["$1 $0.", "$0 $1."], s: [[["Her gün", "every day"], ["Her sabah", "every morning"], ["Hafta sonları", "{at|on} {the |}weekends"], ["Akşamları", "in the {evenings|evening}"]], [["kitap okurum", "I read books"], ["müzik dinlerim", "I listen to music"], ["koşarım", "I run"], ["İngilizce çalışırım", "I study English"], ["yürüyüş yaparım", "I {go for a walk|walk}"], ["yemek pişiririm", "I cook"], ["arkadaşlarımla buluşurum", "I meet {with |}my friends"], ["ders çalışırım", "I study"]]] },
+  { l: "A1", t: "gz", tr: "$0 $1.", en: ["$0 $1."], s: [P, [["her gün gazete okur", "reads {the|a} newspaper every day"], ["sabahları çay içer", "drinks tea in the {mornings|morning}"], ["erken uyanır", "{wakes|gets} up early"], ["arabayla işe gider", "goes to work by car"], ["çok çalışır", "works {hard|a lot}"], ["İngilizce konuşur", "speaks English"]]] },
+  { l: "A1", t: "sz", tr: "$0 $1.", en: ["$0 $1."], s: [P, [["şimdi kitap okuyor", "is reading a book {now|right now}"], ["kahve içiyor", "is drinking coffee"], ["bahçede oturuyor", "is sitting in the garden"], ["telefonla konuşuyor", "is talking on the phone"], ["yemek pişiriyor", "is cooking"], ["televizyon izliyor", "is watching {TV|television}"], ["araba yıkıyor", "is washing {a|the} car"], ["uyuyor", "is sleeping"]]] },
+  { l: "A1", t: "there", tr: "$0 $1 var.", en: ["$1 $0."], s: [[["Masada", "on the table"], ["Odada", "in the room"], ["Çantamda", "in my bag"], ["Evde", "in the house"]], [["bir kitap", "there is a book"], ["bir anahtar", "there is a key"], ["bir telefon", "there is a phone"], ["iki defter", "there are two notebooks"], ["üç elma", "there are three apples"], ["dört kalem", "there are four {pens|pencils}"]]] },
+  { l: "A1", t: "can", tr: "$0 $1.", en: ["$0 $1."], s: [[["Kardeşim", "my {brother|sister|sibling}"], ...P.slice(0, 3)], [["İngilizce konuşabilir", "can speak English"], ["yüzebilir", "can swim"], ["araba kullanabilir", "can drive{ a car|}"], ["gitar çalabilir", "can play {the |}guitar"], ["yemek yapabilir", "can cook"], ["İngilizce konuşamaz", "cannot speak English"], ["yüzemez", "cannot swim"], ["araba kullanamaz", "cannot drive{ a car|}"]]] },
+  { l: "A1", t: "soru", tr: "$0 nerede?", en: ["Where is $0?"], s: [[["Anahtarım", "my key"], ["Çantan", "your bag"], ["Annen", "your {mother|mom|mum}"], ["Okul", "the school"], ["Banka", "the bank"], ["Hastane", "the hospital"], ["İstasyon", "the station"], ["Kitabım", "my book"]]] },
+  { l: "A1", t: "emir", tr: "Lütfen $0.", en: ["Please $0.", "$0, please."], s: [[["kapıyı aç", "open the door"], ["pencereyi kapat", "{close|shut} the window"], ["buraya gel", "come here"], ["otur", "{sit down|sit}"], ["bekle", "wait"], ["beni dinle", "listen to me"], ["yavaş konuş", "speak slowly"], ["kitabını aç", "open your book"]]] },
+  // A2
+  { l: "A2", t: "gec", tr: "$0 $1.", en: ["$1 $0.", "$0 $1."], s: [[["Dün", "yesterday"], ["Geçen hafta", "last week"], ["Geçen ay", "last month"], ["Geçen yıl", "last year"]], [["Ankara'ya gittim", "I went to Ankara"], ["yeni bir telefon aldım", "I bought a new phone"], ["eski bir arkadaşımı gördüm", "I saw an old friend"], ["bir film izledim", "I watched a {film|movie}"], ["bir kitap okudum", "I read a book"], ["annemi ziyaret ettim", `I visited ${MOM}`], ["evi temizledim", "I cleaned the house"], ["bir mektup yazdım", "I wrote a letter"]]] },
+  { l: "A2", t: "gec", tr: "$0 $1.", en: ["$1 $0.", "$0 $1."], s: [[["Dün", "yesterday"], ["Dün akşam", "{last night|yesterday evening}"], ["Geçen pazar", "last Sunday"]], [["ders çalışmadım", "I did not study"], ["işe gitmedim", "I did not go to work"], ["kahvaltı yapmadım", "I did not {have|eat} breakfast"], ["onu aramadım", "I did not call {him|her}"], ["dışarı çıkmadım", "I did not go out"], ["televizyon izlemedim", "I did not watch {TV|television}"]]] },
+  { l: "A2", t: "gel", tr: "$0 $1.", en: ["$1 $0.", "$0 $1."], s: [[["Yarın", "tomorrow"], ["Gelecek hafta", "next week"], ["Gelecek ay", "next month"], ["Bu yaz", "this summer"]], [["İstanbul'a gideceğim", `I ${WV} go to İstanbul`], ["yeni bir araba alacağım", `I ${WV} buy a new car`], ["annemi arayacağım", `I ${WV} call ${MOM}`], ["evi boyayacağım", `I ${WV} paint the house`], ["dedemi ziyaret edeceğim", `I ${WV} visit my {grandfather|grandpa}`], ["yeni bir işe başlayacağım", `I ${WV} start a new job`]]] },
+  { l: "A2", t: "kars", tr: "$0 $1 daha $2.", en: ["$0 is $2 than $1."], s: [[["Ali", "Ali"], ["Ayşe", "Ayşe"], ["Mehmet", "Mehmet"]], [["Zeynep'ten", "Zeynep"], ["benden", "me"], ["senden", "you"]], [["uzun", "taller"], ["kısa", "shorter"], ["genç", "younger"], ["yaşlı", "older"], ["zengin", "richer"]]] },
+  { l: "A2", t: "kars", tr: "$0 sınıfın en $1 öğrencisi.", en: ["$0 is the $1 student in the class."], s: [[["Ali", "Ali"], ["Ayşe", "Ayşe"], ["Mehmet", "Mehmet"]], [["başarılı", "most successful"], ["genç", "youngest"], ["uzun", "tallest"], ["çalışkan", "most hardworking"]]] },
+  { l: "A2", t: "pp", tr: "Hiç $0?", en: ["Have you ever $0?"], s: [[["Japonya'ya gittin mi", "been to Japan"], ["İtalya'ya gittin mi", "been to Italy"], ["ata bindin mi", "ridden a horse"], ["balık tuttun mu", "{been fishing|caught a fish}"], ["kayak yaptın mı", "{been skiing|skied}"], ["bu kitabı okudun mu", "read this book"], ["bu filmi izledin mi", "{seen|watched} this {film|movie}"]]] },
+  { l: "A2", t: "pp", tr: "Henüz $0.", en: ["I have not $0 yet.", "I have not yet $0."], s: [[["kahvaltı yapmadım", "{had|eaten} breakfast"], ["işimi bitirmedim", "finished my work"], ["kitabı okumadım", "read the book"], ["ona söylemedim", "told {him|her}"], ["bileti almadım", "bought the ticket"], ["odamı temizlemedim", "cleaned my room"]]] },
+  { l: "A2", t: "used", tr: "Eskiden $0.", en: ["I used to $0."], s: [[["çok kitap okurdum", "read {a lot of|many|lots of} books"], ["futbol oynardım", "play {football|soccer}"], ["köyde yaşardım", "live in a village"], ["erken kalkardım", "{get|wake} up early"], ["sigara içerdim", "smoke"], ["gitar çalardım", "play {the |}guitar"], ["okula yürürdüm", "walk to school"], ["çok çay içerdim", "drink {a lot of|lots of} tea"]]] },
+  { l: "A2", t: "pc", tr: "Beni aradığında $0.", en: ["I was $0 when you {called|phoned}.", "When you {called|phoned}, I was $0."], s: [[["kitap okuyordum", "reading a book"], ["yemek yiyordum", "eating"], ["uyuyordum", "sleeping"], ["ders çalışıyordum", "studying"], ["duş alıyordum", "{taking|having} a shower"], ["araba kullanıyordum", "driving"], ["televizyon izliyordum", "watching {TV|television}"], ["çalışıyordum", "working"]]] },
+  { l: "A2", t: "bag", tr: "$0 $1.", en: ["$1 because $0.", "Because $0, $1."], s: [[["Hasta olduğum için", "I was {sick|ill}"], ["Yorgun olduğum için", "I was tired"], ["Yağmur yağdığı için", "it was raining"], ["Geç kaldığım için", "I was late"]], [["dışarı çıkmadım", "I did not go out"], ["evde kaldım", "I stayed {at |}home"], ["partiye gitmedim", "I did not go to the party"], ["taksiye bindim", "I took a taxi"]]] },
+  { l: "A2", t: "can", tr: "Lütfen $0?", en: ["{Can|Could|Would} you {please |}$0?"], s: [[["bana yardım eder misin", "help me"], ["kapıyı açar mısın", "open the door"], ["pencereyi kapatır mısın", "{close|shut} the window"], ["bana su getirir misin", "bring me {some |}water"], ["beni arar mısın", "call me"], ["daha yavaş konuşur musun", "speak {more slowly|slower}"], ["radyoyu kapatır mısın", "{turn off the radio|turn the radio off}"]]] },
+  // B1
+  { l: "B1", t: "k1", tr: "$0, $1.", en: ["If $0, $1.", "$1 if $0."], s: [[["Bu akşam erken çıkarsam", "I leave early this evening"], ["Erken uyanırsam", "I wake up early"], ["Param olursa", "I have {enough |}money"], ["Vaktim olursa", "I have time"], ["Hava güzel olursa", "the weather is {nice|good}"], ["Sınavı geçersem", "I pass the exam"]], [["sana yardım ederim", "I will help you"], ["parka giderim", "I will go to the park"], ["yeni bir kitap alırım", "I will buy a new book"], ["annemi ziyaret ederim", `I will visit ${MOM}`], ["arkadaşlarımla buluşurum", "I will meet {with |}my friends"]]] },
+  { l: "B1", t: "ed", tr: "$0 $1 $2.", en: ["$0 was $2 $1."], s: [[["Bu ev", "this house"], ["Bu köprü", "this bridge"], ["Bu okul", "this school"], ["Bu hastane", "this hospital"], ["Bu bina", "this building"], ["Bu otel", "this hotel"]], [["1985'te", "in 1985"], ["1970'te", "in 1970"], ["geçen yıl", "last year"], ["on yıl önce", "ten years ago"]], [["yapıldı", "built"], ["yenilendi", "renovated"], ["satıldı", "sold"]]] },
+  { l: "B1", t: "ed", tr: "$0 $1 üretilir.", en: ["$0 is {made|produced} in $1."], s: [[["Bu araba", "this car"], ["Bu peynir", "this cheese"], ["Bu kahve", "this coffee"], ["Bu çay", "this tea"], ["Bu telefon", "this phone"]], [["Türkiye'de", "{Turkey|Türkiye}"], ["Çin'de", "China"], ["Brezilya'da", "Brazil"], ["Japonya'da", "Japan"]]] },
+  { l: "B1", t: "ppc", tr: "$0 $1.", en: ["I have been $1 for $0.", "For $0 I have been $1."], s: [[["İki yıldır", "two years"], ["Üç aydır", "three months"], ["Beş yıldır", "five years"], ["On yıldır", "ten years"], ["Altı aydır", "six months"]], [["Ankara'da yaşıyorum", "living in Ankara"], ["burada çalışıyorum", "working here"], ["piyano öğreniyorum", "learning {the |}piano"], ["Almanca öğreniyorum", "{learning|studying} German"], ["yoga yapıyorum", "doing yoga"], ["bu projede çalışıyorum", "working on this project"]]] },
+  { l: "B1", t: "dol", tr: "$0 bana $1 söyledi.", en: ["$0 told me {that |}$1."], s: [[["Öğretmen", "the teacher"], ["Doktor", "the doctor"], ["Arkadaşım", "my friend"], ["Komşum", "my neighbor"]], [["yorgun olduğunu", "{he|she} was tired"], ["meşgul olduğunu", "{he|she} was busy"], ["geç kalacağını", "{he|she} would be late"], ["işini bıraktığını", "{he|she} had {quit|left} {his|her} job"], ["hasta olduğunu", "{he|she} was {sick|ill}"]]] },
+  { l: "B1", t: "zor", tr: "$0 $1 gerekiyor.", en: ["I {have to|need to|must} $1 $0.", "$0 I {have to|need to|must} $1."], s: [[["Bugün", "today"], ["Yarın", "tomorrow"], ["Bu akşam", "this evening"]], [["erken çıkmam", "leave early"], ["doktora gitmem", "go to the doctor"], ["bu işi bitirmem", "finish this {job|work}"], ["annemi aramam", `call ${MOM}`], ["rapor yazmam", "write a report"]]] },
+  { l: "B1", t: "zor", tr: "$0.", en: ["You {should|must|ought to} $0."], s: [[["Daha çok su içmelisin", "drink more water"], ["Daha erken yatmalısın", "go to bed earlier"], ["Daha çok çalışmalısın", "{study|work} {harder|more}"], ["Doktora gitmelisin", "{go to|see} {the|a} doctor"], ["Sigarayı bırakmalısın", "{quit|stop} smoking"], ["Daha az kahve içmelisin", "drink less coffee"], ["Spor yapmalısın", "{exercise|do sports}"]]] },
+  { l: "B1", t: "fk", tr: "$0 seviyorum.", en: ["I {like|love|enjoy} $1."], s: [[["Yüzmeyi", "swimming"], ["Kitap okumayı", "reading{ books|}"], ["Yemek yapmayı", "cooking"], ["Seyahat etmeyi", "traveling"], ["Resim yapmayı", "{painting|drawing}"], ["Müzik dinlemeyi", "listening to music"]]] },
+  { l: "B1", t: "fk", tr: "$0 karar verdim.", en: ["I {decided|have decided} to $1."], s: [[["Yeni bir araba almaya", "buy a new car"], ["Almanya'ya taşınmaya", "move to Germany"], ["İşimi değiştirmeye", "change my job"], ["Japonca öğrenmeye", "learn Japanese"], ["Erken kalkmaya", "{get|wake} up early"]]] },
+  { l: "B1", t: "zb", tr: "$0 $1.", en: ["As soon as $0, $1.", "$1 as soon as $0."], s: [[["Eve varır varmaz", "I get home"], ["İşi bitirir bitirmez", "I finish the {job|work}"], ["Haberi alır almaz", "I get the news"], ["Uçak iner inmez", "the plane lands"]], [["seni arayacağım", "I will call you"], ["sana mesaj atacağım", "I will {text you|send you a message}"], ["sana haber vereceğim", "I will let you know"]]] },
+  { l: "B1", t: "wish", tr: "Keşke $0.", en: ["{I wish|If only} I $0."], s: [[["daha uzun olsam", "{were|was} taller"], ["daha zengin olsam", "{were|was} richer"], ["araba kullanabilsem", "could drive"], ["yüzebilsem", "could swim"], ["İspanyolca bilsem", "knew Spanish"], ["daha çok vaktim olsa", "had more time"], ["bir köpeğim olsa", "had a dog"], ["burada yaşasam", "lived here"]]] },
+  { l: "B1", t: "pperf", tr: "Eve vardığımda $0.", en: ["When I {arrived|got} home, $0.", "$0 when I {arrived|got} home."], s: [[["film bitmişti", "the {film|movie} had {already |}{finished|ended}"], ["herkes uyumuştu", "everyone had {already |}{fallen asleep|gone to sleep|gone to bed}"], ["misafirler gitmişti", "the guests had {already |}left"], ["babam çıkmıştı", "my {father|dad} had {already |}left"], ["yemek soğumuştu", "the food had {already |}{gone|got|become} cold"]]] },
+  // B2
+  { l: "B2", t: "k2", tr: "$0, $1.", en: ["If $0, $1.", "$1 if $0."], s: [[["Zengin olsam", "I {were|was} rich"], ["Daha çok vaktim olsa", "I had more time"], ["Senin yerinde olsam", "I {were|was} you"], ["Arabam olsa", "I had a car"], ["İngilizcem daha iyi olsa", "my English {were|was} better"], ["Burada yaşasam", "I lived here"]], [["daha çok seyahat ederdim", "I would travel more"], ["yeni bir iş arardım", "I would look for a new job"], ["her gün spor yapardım", "I would exercise every day"], ["yurt dışına giderdim", "I would go abroad"], ["bir kitap yazardım", "I would write a book"]]] },
+  { l: "B2", t: "k3", tr: "$0, $1.", en: ["If $0, $1.", "$1 if $0."], s: [[["Daha çok çalışsaydım", "I had {studied|worked} {harder|more}"], ["Erken kalksaydım", "I had {got|gotten|woken} up early"], ["Seni görseydim", "I had seen you"], ["Haberim olsaydı", "I had known"], ["Vaktim olsaydı", "I had had time"], ["Param olsaydı", "I had had {enough |}money"]], [["sınavı geçerdim", "I would have passed the exam"], ["daha mutlu olurdum", "I would have been happier"], ["sana yardım ederdim", "I would have helped you"], ["toplantıya gelirdim", "I would have come to the meeting"], ["farklı davranırdım", "I would have {acted|behaved} differently"]]] },
+  { l: "B2", t: "mp", tr: "$0.", en: ["You should have $0."], s: [[["Beni aramalıydın", "called me"], ["Daha dikkatli olmalıydın", "been more careful"], ["Erken gelmeliydin", "come early"], ["Bana söylemeliydin", "told me"], ["Ona yardım etmeliydin", "helped {him|her}"], ["Daha çok çalışmalıydın", "{studied|worked} {harder|more}"], ["Özür dilemeliydin", "apologized"], ["Bileti önceden almalıydın", "bought the ticket {in advance|beforehand}"]]] },
+  { l: "B2", t: "mp", tr: "$0.", en: ["{He|She} must have $0."], s: [[["Otobüsü kaçırmış olmalı", "missed the bus"], ["Evi satmış olmalı", "sold the house"], ["Haberi duymuş olmalı", "heard the news"], ["Uyuyakalmış olmalı", "fallen asleep"], ["Telefonunu kaybetmiş olmalı", "lost {his|her} phone"]]] },
+  { l: "B2", t: "ed", tr: "$0 $1 $2 gerekiyor.", en: ["$0 {needs to|has to|must} be $2 $1."], s: [[["Bu raporun", "this report"], ["Bu belgenin", "this document"], ["Bu formun", "this form"], ["Bu mektubun", "this letter"]], [["yarına kadar", "by tomorrow"], ["cumaya kadar", "by Friday"], ["pazartesiye kadar", "by Monday"], ["bu akşama kadar", "by this evening"]], [["imzalanması", "signed"], ["gönderilmesi", "sent"], ["tamamlanması", "{completed|finished}"], ["kontrol edilmesi", "checked"]]] },
+  { l: "B2", t: "so", tr: "O kadar $0 ki $1.", en: ["I was so $0 {that |}$1."], s: [[["yorgundum", "tired"], ["mutluydum", "happy"], ["heyecanlıydım", "excited"], ["üzgündüm", "sad"], ["korkmuştum", "{scared|afraid}"]], [["uyuyamadım", "I could not sleep"], ["konuşamadım", "I could not speak"], ["hiçbir şey yiyemedim", "I could not eat anything"], ["ağlamaya başladım", "I started {to cry|crying}"]]] },
+  { l: "B2", t: "kal", tr: "$0 alışkın değilim.", en: ["I am not used to $1."], s: [[["Erken kalkmaya", "{getting|waking} up early"], ["Sıcak havaya", "hot weather"], ["Araba kullanmaya", "driving"], ["Acı yemeğe", "spicy food"], ["Soğuk havaya", "cold weather"], ["Yalnız yaşamaya", "living alone"]]] },
+  { l: "B2", t: "kal", tr: "$0 lazım.", en: ["I need to {get|have} $1."], s: [[["Saçımı kestirmem", "my hair cut"], ["Arabamı yıkatmam", "my car washed"], ["Evimi boyatmam", "my house painted"], ["Bilgisayarımı tamir ettirmem", "my computer {repaired|fixed}"], ["Takımımı temizletmem", "my suit cleaned"], ["Gözlerimi muayene ettirmem", "my eyes {tested|checked|examined}"]]] },
+  { l: "B2", t: "dol", tr: "$0 söyleyebilir misin?", en: ["{Can|Could} you tell me $1?"], s: [[["Otobüsün saat kaçta geldiğini", "{what time|when} the bus {comes|arrives}"], ["Bankanın nerede olduğunu", "where the bank is"], ["Müzenin ne zaman açıldığını", "when the museum opens"], ["Bu biletin ne kadar olduğunu", "how much this ticket {is|costs}"], ["Toplantının nerede olduğunu", "where the meeting is"], ["Kimin geldiğini", "who came"]]] },
+  { l: "B2", t: "bag", tr: "$0 $1.", en: ["{Although|Even though} $0, $1.", "$1 {although|even though} $0."], s: [[["Yağmur yağmasına rağmen", "it was raining"], ["Yorgun olmama rağmen", "I was tired"], ["Hasta olmama rağmen", "I was {sick|ill}"], ["Geç olmasına rağmen", "it was late"]], [["işe gittim", "I went to work"], ["dışarı çıktım", "I went out"], ["partiye gittim", "I went to the party"], ["çalışmaya devam ettim", "I {continued working|continued to work|kept working}"]]] },
+  // C1
+  { l: "C1", t: "dev", tr: "Daha önce hiç $0.", en: ["Never {before |}had I $0.", "I had never $0{ before|}."], s: [[["bu kadar güzel bir şehir görmemiştim", "seen such a beautiful city"], ["bu kadar lezzetli bir yemek yememiştim", "eaten such {delicious food|a delicious meal}"], ["bu kadar kötü bir film izlememiştim", "{seen|watched} such a bad {film|movie}"], ["bu kadar ilginç bir kitap okumamıştım", "read such an interesting book"], ["bu kadar korkmamıştım", "been so {scared|afraid}"], ["bu kadar yorulmamıştım", "been so tired"], ["bu kadar kibar bir insanla tanışmamıştım", "met such a {kind|polite} person"]]] },
+  { l: "C1", t: "dev", distinct: true, tr: "Sadece $0 değil, aynı zamanda $1.", en: ["{He|She} is not only $0{,|} but also $1.", "Not only is {he|she} $0, but {he|she} is also $1."], s: [TRAITS, TRAITS] },
+  { l: "C1", t: "dev", tr: "$0 $1.", en: ["No sooner had I $0 than $1.", "As soon as I $0, $1.", "Hardly had I $0 when $1."], s: [[["Eve varır varmaz", "{arrived|got} home"], ["Otobüse biner binmez", "got on the bus"], ["Kapıyı açar açmaz", "opened the door"], ["Ofise ulaşır ulaşmaz", "reached the office"]], [["telefon çaldı", "the phone rang"], ["elektrikler kesildi", "the {power|electricity} went {out|off}"], ["yağmur başladı", "it started {to rain|raining}"], ["kapı çaldı", "the doorbell rang"]]] },
+  { l: "C1", t: "ed", tr: "$0 $1 $2 bekleniyor.", en: ["$0 expected to $2 $1."], s: [[["Fiyatların", "prices are"], ["Enflasyonun", "inflation is"], ["İşsizliğin", "unemployment is"], ["Nüfusun", "the population is"]], [["önümüzdeki yıl", "next year"], ["bu yıl", "this year"], ["gelecek on yılda", "{in|over} the next decade"]], [["artması", "{rise|increase|go up}"], ["düşmesi", "{fall|decrease|drop|go down}"]]] },
+  { l: "C1", t: "bag", tr: "$0 $1.", en: ["{Despite|In spite of} $0, $1.", "$1 {despite|in spite of} $0."], s: [[["Yağmura rağmen", "the rain"], ["Kötü hava koşullarına rağmen", "the bad weather{ conditions|}"], ["Yüksek fiyatlara rağmen", "the high prices"], ["Eleştirilere rağmen", "the criticism"], ["Zorluklara rağmen", "the difficulties"]], [["etkinlik planlandığı gibi gerçekleşti", "the event took place as planned"], ["proje zamanında tamamlandı", "the project was completed on time"], ["herkes çok memnun kaldı", "everyone was very {satisfied|pleased|happy}"], ["şirket büyümeye devam etti", "the company continued to grow"]]] },
+  { l: "C1", t: "k3", tr: "$0, $1.", en: ["{If we had|Had we} $0, $1.", "$1 if we had $0."], s: [[["Uyarıları dinleseydik", "listened to the warnings"], ["Daha önce harekete geçseydik", "acted earlier"], ["Planı değiştirseydik", "changed the plan"], ["Uzmanlara danışsaydık", "consulted {the |}experts"], ["Bütçeyi artırsaydık", "increased the budget"]], [["bu sorunla karşılaşmazdık", "we would not have faced this problem"], ["daha iyi sonuçlar alırdık", "we would have {got|gotten|achieved} better results"], ["projeyi zamanında bitirirdik", "we would have finished the project on time"]]] },
+  { l: "C1", t: "kal", tr: "$0, $1.", en: ["{No matter how|However} $0, $1."], s: [[["Ne kadar çok çalışırsam çalışayım", "hard I work"], ["Ne kadar denersem deneyeyim", "{hard|many times} I try"], ["Ne kadar zor olursa olsun", "difficult it is"], ["Ne kadar uzun sürerse sürsün", "long it takes"]], [["vazgeçmeyeceğim", "I will not give up"], ["bunu yapmak zorundayım", "I have to do this"]]] },
+  { l: "C1", t: "mp", tr: "$0.", en: ["You should not have $0."], s: [[["Ona güvenmemeliydin", "trusted {him|her}"], ["Bu kadar harcamamalıydın", "spent so much{ money|}"], ["Bunu söylememeliydin", "said that"], ["İşini bırakmamalıydın", "{quit|left} your job"], ["O kadar acele etmemeliydin", "{hurried|rushed} so much"], ["Onu beklememeliydin", "waited for {him|her}"]]] },
+];
+const cartesian = slots => slots.reduce((acc, s) => acc.flatMap(a => s.map(x => [...a, x])), [[]]);
+FRAMES.forEach((F, fi) => {
+  for (const combo of cartesian(F.s)) {
+    if (F.distinct && combo[0][0] === combo[1][0]) continue;
+    const fill = (t, k) => t.replace(/\$(\d)/g, (_, i) => (combo[+i] || combo[0])[k]);
+    const f = fill(F.tr, 0), tr = f[0].toLocaleUpperCase("tr") + f.slice(1);
+    if (BY[tr]) continue;
+    const s = { id: tr, l: F.l, tr, raw: F.en.map(e => fill(e, 1)), t: F.t, g: "f" + fi };
+    ALL.push(s); BY[tr] = s;
+  }
+});
+
+/* ================= Kalıp açıklamaları ================= */
+const NOTES = {
+  be: ["Özne + am / is / are + sıfat / isim", "Türkçede “Kedim küçük” derken fiil görünmez; İngilizcede be fiili şarttır.", "My cat is small."],
+  gz: ["Özne + fiil (he/she/it → fiil + s)", "Alışkanlık ve düzenli olaylar için. Üçüncü tekil kişide fiile -s gelir.", "She drinks tea every morning."],
+  sz: ["Özne + am / is / are + fiil-ing", "Şu anda olan işler için.", "My dog is running."],
+  there: ["There is + tekil / There are + çoğul + yer", "“…var” demenin yolu. Yer bilgisi genelde sonda gelir.", "There are two pens on the table."],
+  iy: ["my / your / his / her / our / their + isim", "Türkçedeki iyelik eki, ismin önüne gelen ayrı bir kelimeye dönüşür.", "This is my bag."],
+  emir: ["Fiilin yalın hali (+ please)", "Özne yazılmaz, cümle doğrudan fiille başlar.", "Please open the window."],
+  soru: ["Soru kelimesi + be / yardımcı fiil + özne", "Soru kelimesi başa, fiil öznenin önüne geçer.", "Where is your bag?"],
+  can: ["can / could + fiilin yalın hali", "Yetenek ve rica için. Olumsuzu cannot. Fiile -s veya to gelmez.", "Could you help me?"],
+  gec: ["Özne + fiil-ed / 2. hal · Olumsuz: did not + yalın fiil", "Bitmiş olaylar için. did kullanınca fiil yalın kalır.", "I did not go to work yesterday."],
+  gel: ["will + yalın fiil / am-is-are going to + yalın fiil", "Gelecekteki olaylar ve planlar için.", "I am going to buy a car."],
+  kars: ["sıfat-er + than · the + sıfat-est · more / most + uzun sıfat", "“daha” için -er veya more, “en” için the -est veya the most.", "Ali is taller than me."],
+  pp: ["have / has + fiilin 3. hali", "Zamanı belli olmayan deneyim ve sonuçlar için: ever, never, yet.", "Have you ever been to Paris?"],
+  used: ["used to + yalın fiil", "Eskiden yapılan ama artık yapılmayan şeyler: “-erdim / -ardım”.", "I used to live here."],
+  pc: ["was / were + fiil-ing", "Geçmişte devam eden iş; araya giren olay when + geçmiş zamanla verilir.", "I was sleeping when you called."],
+  bag: ["because + cümle · although + cümle · despite + isim", "although sonrası tam cümle, despite sonrası isim veya -ing gelir.", "Despite the rain, we went out."],
+  k1: ["If + geniş zaman, will + yalın fiil", "Gerçekleşebilir koşul. If kısmında will kullanılmaz.", "If I have time, I will help you."],
+  k2: ["If + geçmiş zaman, would + yalın fiil", "Şu an için hayali durum: “-sam, -ırdım”.", "If I were rich, I would travel."],
+  k3: ["If + had + V3, would have + V3", "Geçmişte olmamış bir durumun hayali: “-saydım, -ırdım”.", "If I had studied, I would have passed."],
+  ed: ["be + fiilin 3. hali", "İşi yapan değil yapılan önemliyse. Zamanı be fiili gösterir.", "This bridge was built in 1990."],
+  ppc: ["have / has been + fiil-ing + for / since", "Geçmişte başlayıp hâlâ süren iş. “-dır” ile süre: for, başlangıç: since.", "I have been waiting for two hours."],
+  dol: ["said / told me (that) + zaman bir geri · soru sırası düz", "Aktarımda zaman geriye kayar; iç soruda özne fiilden önce gelir.", "Can you tell me where the bank is?"],
+  wish: ["I wish + geçmiş zaman · I wish + had + V3", "Şimdiki dilek geçmiş zamanla, geçmişe pişmanlık had + V3 ile.", "I wish I had more time."],
+  fk: ["enjoy / like + -ing · decide / want + to + fiil", "Fiile göre -ing ya da to kalıbıyla öğren.", "I decided to learn Spanish."],
+  zb: ["when / before / until / as soon as + geniş zaman, will…", "Zaman bağlacından sonra will kullanılmaz.", "I will call you as soon as I get home."],
+  zor: ["must / have to / should + yalın fiil", "Zorunluluk ve tavsiye. “Zorunda değilsin”: do not have to.", "You should drink more water."],
+  pperf: ["had + fiilin 3. hali", "Geçmişteki bir olaydan daha önce olan iş: “-mıştı”.", "The film had started when we arrived."],
+  so: ["so + sıfat + that · such + a + sıfat + isim", "“O kadar … ki” kalıbı. İsim varsa such kullanılır.", "I was so tired that I fell asleep."],
+  mp: ["should / must / might have + V3", "Geçmişe yorum: yapmalıydın, yapmış olmalı, yapmış olabilir.", "You should have called me."],
+  kal: ["be used to + -ing · get + nesne + V3 · no matter how", "Bu ifadeleri kalıp olarak ezberlemek en kolay yoldur.", "I need to get my hair cut."],
+  dev: ["Olumsuz zarf + yardımcı fiil + özne", "Never, Only then, No sooner başa gelirse soru sırası kullanılır.", "Never had I seen such a city."],
+};
+const noteHtml = t => { const n = NOTES[t]; return n ? `<div class="pattern"><div class="p-name">${esc(T[t])}</div><code>${esc(n[0])}</code><p>${esc(n[1])}</p><p class="p-ex">${esc(n[2])}</p></div>` : ""; };
 
 /* ================= {a|b} genişletme ================= */
 function expand(s) {
@@ -469,10 +592,10 @@ function expand(s) {
   for (const p of parts) for (const e of expand(pre + p + post)) out.push(e.replace(/\s+/g, " ").replace(/\s+([,.?!])/g, "$1").replace(/,+/g, ",").trim());
   return [...new Set(out)];
 }
-function prep(s) { if (!s.answers) { s.answers = s.raw.flatMap(expand); s.norm = s.answers.map(normalize); } return s; }
+function prep(s) { if (!s.answers) { s.answers = [...new Set(s.raw.flatMap(expand).map(a => a[0].toUpperCase() + a.slice(1)))]; s.norm = s.answers.map(normalize); } return s; }
 
 /* ================= Normalleştirme ================= */
-const SPELL = { colour: "color", cancelled: "canceled", travelling: "traveling", favourite: "favorite", realise: "realize",
+const SPELL = { neighbour: "neighbor", apologised: "apologized", realised: "realized", colour: "color", cancelled: "canceled", travelling: "traveling", favourite: "favorite", realise: "realize",
   organise: "organize", centre: "center", theatre: "theater", criticise: "criticize", apologise: "apologize", grey: "gray" };
 const NUM = { "0": "zero", "1": "one", "2": "two", "3": "three", "4": "four", "5": "five", "6": "six", "7": "seven", "8": "eight", "9": "nine", "10": "ten", "100": "hundred" };
 function normalize(text) {
@@ -566,7 +689,10 @@ function buildRound(mode, key) {
   const unseen = shuffle(cands.filter(s => !info[s.id]));
   const wrong = shuffle(cands.filter(s => info[s.id] && !info[s.id].lastOk));
   const rest = cands.filter(s => info[s.id] && info[s.id].lastOk).sort((a, b) => info[a.id].last - info[b.id].last);
-  const picked = [...unseen, ...wrong, ...rest].slice(0, ROUND);
+  // Aynı kalıptan en fazla 2 soru gelsin ki test çeşitli olsun
+  const ordered = [...unseen, ...wrong, ...rest], picked = [], perGroup = {};
+  for (const s of ordered) { if (picked.length >= ROUND) break; if ((perGroup[s.g] || 0) >= 2) continue; perGroup[s.g] = (perGroup[s.g] || 0) + 1; picked.push(s); }
+  for (const s of ordered) { if (picked.length >= ROUND) break; if (!picked.includes(s)) picked.push(s); }
   const no = rounds.filter(r => r.label === label).length + 1;
   return { mode, key: mode === "ids" ? null : key, label, no, ids: shuffle(picked.map(s => s.id)), results: [], done: false };
 }
@@ -582,7 +708,11 @@ function renderLevels() {
     const b = document.createElement("button");
     b.className = "lvl"; b.setAttribute("aria-pressed", round && round.mode === "level" && round.key === l);
     b.innerHTML = l === "MIX" ? "Karışık" : `${l}<small>${LEVEL_NAMES[l]}</small>`;
-    b.onclick = () => { level = l; store.set("level", l); startRound("level", l); };
+    b.onclick = () => {
+      level = l; store.set("level", l);
+      if (round && !round.done && round.mode === "level" && round.key === l) return setView("practice"); // Yarım test değişmesin
+      startRound("level", l);
+    };
     box.appendChild(b);
   });
 }
@@ -617,10 +747,13 @@ function showQuestion() {
   $("tr").textContent = current.tr;
   $("topic").textContent = T[current.t];
   const lbl = round.mode === "level" ? (round.key === "MIX" ? `Karışık · ${current.l}` : current.l) : `${round.label} · ${current.l}`;
-  $("lvlTag").textContent = `${lbl} · Tur ${round.no}`;
+  $("lvlTag").textContent = `${lbl} · Test ${round.no}`;
   $("progress").textContent = `Soru ${idx + 1} / ${round.ids.length}`;
   $("roundFill").style.width = `${100 * idx / round.ids.length}%`;
   $("hint").textContent = ""; hintStep = 0; usedHelp = false;
+  $("patternPre").hidden = true; $("patternPre").innerHTML = noteHtml(current.t);
+  $("patternPost").innerHTML = noteHtml(current.t);
+  $("patternBtn").disabled = false;
   $("result").classList.remove("show");
   const inp = $("answer"); inp.value = ""; inp.disabled = false;
   $("main").textContent = "Kontrol et"; checked = false;
@@ -709,8 +842,9 @@ function afterAnswer() {
   checked = true;
   $("answer").disabled = true;
   const last = round.results.length >= round.ids.length;
-  $("main").textContent = last ? "Turu bitir →" : "Sonraki →";
-  ["hintBtn", "revealBtn", "skipBtn"].forEach(id => $(id).disabled = true);
+  $("main").textContent = last ? "Testi bitir →" : "Sonraki →";
+  ["hintBtn", "revealBtn", "skipBtn", "patternBtn"].forEach(id => $(id).disabled = true);
+  $("patternPre").hidden = true;
   $("main").focus();
 }
 function skip() {
@@ -734,6 +868,23 @@ function hint() {
   $("answer").focus();
 }
 
+/* ---------- Seviye ilerlemesi ---------- */
+const PASS = 0.7, LEVEL_GOAL = 5;
+function levelTests(key) { return rounds.filter(r => r.mode === "level" && r.label === (key === "MIX" ? "Karışık" : key)); }
+function progressHtml() {
+  if (round.mode !== "level") return "";
+  const ts = levelTests(round.key), passed = ts.filter(r => r.c / r.n >= PASS).length;
+  const cur = ts[ts.length - 1], prev = ts[ts.length - 2];
+  const delta = prev ? cur.c - prev.c : null;
+  const cmp = delta === null ? "İlk testin" : delta > 0 ? `Önceki teste göre +${delta} doğru` : delta < 0 ? `Önceki teste göre ${delta} doğru` : "Önceki testle aynı";
+  const name = round.key === "MIX" ? "Karışık" : round.key;
+  return `<div class="lvlprog">
+    <div class="top"><b>${esc(name)} ilerlemen: ${Math.min(passed, LEVEL_GOAL)} / ${LEVEL_GOAL} test geçildi</b><span style="color:var(--muted)">${esc(cmp)}</span></div>
+    <div class="bar" title="Geçmek için en az %${PASS * 100} doğru gerekir"><i style="width:${100 * Math.min(passed, LEVEL_GOAL) / LEVEL_GOAL}%"></i></div>
+    <div class="hist">${ts.slice(-8).map((r, i, a) => `<span class="chip">Test ${ts.length - a.length + i + 1}: ${r.c}/${r.n}${r.c / r.n >= PASS ? " ✓" : ""}</span>`).join("")}</div>
+  </div>`;
+}
+
 /* ---------- Tur özeti ---------- */
 function showSummary() {
   checked = false;
@@ -744,31 +895,37 @@ function showSummary() {
   const byTopic = {};
   res.forEach(r => { const t = BY[r.id].t; const x = byTopic[t] || (byTopic[t] = { n: 0, w: 0 }); x.n++; if (!isOk(r.s)) x.w++; });
   const weak = Object.entries(byTopic).filter(([, x]) => x.w).sort((a, b) => b[1].w / b[1].n - a[1].w / a[1].n || b[1].w - a[1].w).slice(0, 4);
-  const msg = c === n ? "Kusursuz tur! 🎉" : c / n >= .8 ? "Harika gidiyorsun." : c / n >= .5 ? "Fena değil, yanlışlarını tekrar et." : "Bu seviye biraz zorlayıcı — yanlışlarını tekrar etmeyi dene.";
+  const msg = c === n ? "Kusursuz test! 🎉" : c / n >= .8 ? "Harika gidiyorsun." : c / n >= .5 ? "Fena değil, yanlışlarını tekrar et." : "Bu seviye biraz zorlayıcı — yanlışlarını tekrar etmeyi dene.";
   const nextLevel = round.mode === "level" ? round.key : level;
+  const li = LEVELS.indexOf(round.key);
+  const upLevel = round.mode === "level" && li >= 0 && li < LEVELS.length - 1 && levelTests(round.key).filter(r => r.c / r.n >= PASS).length >= LEVEL_GOAL ? LEVELS[li + 1] : null;
   box.innerHTML = `
-    <div class="meta" style="justify-content:center">${esc(round.label)} · Tur ${round.no} tamamlandı</div>
+    <div class="meta" style="justify-content:center">${esc(round.label)} · Test ${round.no} tamamlandı</div>
     <div class="big">${c}<span>/${n}</span></div>
     <p class="sub">%${Math.round(100 * c / n)} doğruluk${typos ? ` · ${typos} yazım hatası` : ""} · ${esc(msg)}</p>
-    ${weak.length ? `<h3>Bu turda zorlandığın konular</h3><div class="rows">${weak.map(([t, x]) => `
+    ${progressHtml()}
+    ${weak.length ? `<h3>Bu testte zorlandığın konular</h3><div class="rows">${weak.map(([t, x]) => `
       <div class="row topicrow"><span class="name" title="${esc(T[t])}">${esc(T[t])}</span>
       <div class="bar" title="${x.n - x.w}/${x.n} doğru"><i style="width:${100 * (x.n - x.w) / x.n}%"></i></div>
       <span class="val"><b>${x.n - x.w}</b>/${x.n}</span>
-      <button class="btn ghost small" data-topic="${t}">Çalış</button></div>`).join("")}</div>` : ""}
+      <button class="btn ghost small" data-topic="${t}">Çalış</button></div>`).join("")}</div>
+      <h3>Kullanman gereken kalıplar</h3>${weak.map(([t]) => noteHtml(t)).join("")}` : ""}
     ${wrongs.length ? `<h3>Yanlış yaptıkların (${wrongs.length})</h3><ul class="mlist">${wrongs.map(r => `
       <li><div class="q">${esc(BY[r.id].tr)}</div>
       ${r.u ? `<div class="yours">Senin: <s>${esc(r.u)}</s></div>` : `<div class="yours">${esc(STATUS_TR[r.s])}</div>`}
       <div class="right">Doğru: ${esc(r.r)}</div></li>`).join("")}</ul>` : ""}
     <div class="actions">
-      <button class="btn" id="newRound">Yeni ${ROUND} soru (${esc(nextLevel === "MIX" ? "Karışık" : nextLevel)})</button>
-      ${wrongs.length ? `<button class="btn ghost" id="retryWrong">Bu turun yanlışlarını tekrar et</button>` : ""}
+      <button class="btn" id="newRound">Sonraki test (${esc(nextLevel === "MIX" ? "Karışık" : nextLevel)})</button>
+      ${upLevel ? `<button class="btn ghost" id="upLevel">${upLevel} seviyesine geç</button>` : ""}
+      ${wrongs.length ? `<button class="btn ghost" id="retryWrong">Bu testin yanlışlarını tekrar et</button>` : ""}
       <button class="btn ghost" id="toStats">İstatistiklere bak</button>
     </div>`;
   $("newRound").onclick = () => startRound("level", nextLevel);
   if (wrongs.length) $("retryWrong").onclick = () => startRound("ids", [...new Set(wrongs.map(r => r.id))]);
   $("toStats").onclick = () => setView("stats");
+  if (upLevel) $("upLevel").onclick = () => { level = upLevel; store.set("level", upLevel); startRound("level", upLevel); };
   box.querySelectorAll("[data-topic]").forEach(b => b.onclick = () => startRound("topic", b.dataset.topic));
-  $("newRound").focus();
+  window.scrollTo(0, 0);
 }
 
 /* ---------- İstatistikler ---------- */
@@ -797,7 +954,7 @@ function tips(an) {
   if (an.types.moved >= 2) out.push("<b>Kelime sırası:</b> İngilizce <i>Özne + Fiil + Nesne</i> sırasını izler. Türkçedeki gibi fiili sona koymamaya dikkat et.");
   if (an.types.typo >= 3) out.push("<b>Yazım:</b> Birkaç yazım hatası yaptın. Zorlandığın kelimeleri birkaç kez yazarak tekrar etmek yardımcı olur.");
   const weak = Object.entries(an.topics).filter(([, x]) => x.n >= 2).sort((a, b) => a[1].ok / a[1].n - b[1].ok / b[1].n)[0];
-  if (weak && weak[1].ok / weak[1].n < .6) out.push(`<b>En zayıf konun: ${esc(T[weak[0]])}</b> (%${Math.round(100 * weak[1].ok / weak[1].n)}). Bu konudan bir tur çözmeyi dene.`);
+  if (weak && weak[1].ok / weak[1].n < .6) out.push(`<b>En zayıf konun: ${esc(T[weak[0]])}</b> (%${Math.round(100 * weak[1].ok / weak[1].n)}). Bu konudan bir test çözmeyi dene.`);
   return out;
 }
 function renderStats() {
@@ -808,10 +965,11 @@ function renderStats() {
 
   const levelRows = LEVELS.map(l => {
     const as = attempts.filter(a => a.l === l), c = as.filter(a => isOk(a.s)).length;
-    const seen = BANK[l].filter(([tr]) => info[tr]).length;
+    const lvlAll = ALL.filter(s => s.l === l), seen = lvlAll.filter(s => info[s.id]).length;
+    const passed = levelTests(l).filter(r => r.c / r.n >= PASS).length;
     return `<div class="row"><span class="name">${l} <small style="color:var(--muted);font-weight:400">${LEVEL_NAMES[l]}</small></span>
       <div class="bar" title="${as.length ? `${c}/${as.length} doğru` : "henüz soru yok"}"><i style="width:${as.length ? 100 * c / as.length : 0}%"></i></div>
-      <span class="val">${as.length ? `<b>%${Math.round(100 * c / as.length)}</b> · ` : ""}${seen}/${BANK[l].length} cümle görüldü</span></div>`;
+      <span class="val">${as.length ? `<b>%${Math.round(100 * c / as.length)}</b> · ` : ""}${Math.min(passed, LEVEL_GOAL)}/${LEVEL_GOAL} test · ${seen}/${lvlAll.length} cümle</span></div>`;
   }).join("");
 
   const typeNames = { sub: ["Yanlış kelime", "sub"], missing: ["Eksik kelime", "missing"], extra: ["Fazla kelime", "extra"], typo: ["Yazım hatası", "typo"], moved: ["Kelime sırası", "moved"] };
@@ -838,7 +996,7 @@ function renderStats() {
     <div class="tiles">
       <div class="tile"><div class="v">${n}</div><div class="k">cevaplanan soru</div></div>
       <div class="tile"><div class="v">%${Math.round(100 * ok / n)}</div><div class="k">genel doğruluk</div></div>
-      <div class="tile"><div class="v">${rounds.length}</div><div class="k">tamamlanan tur</div></div>
+      <div class="tile"><div class="v">${rounds.length}</div><div class="k">tamamlanan test</div></div>
       <div class="tile"><div class="v">${meta.best}</div><div class="k">en iyi seri</div></div>
     </div>
 
@@ -875,11 +1033,11 @@ function renderStats() {
     </div>
 
     <div class="card panel">
-      <h2>Son turlar</h2>
+      <h2>Son testler</h2>
       ${recent.length ? `<div class="rows">${recent.map(r => `
         <div class="row"><span class="name">${esc(r.label)}</span>
         <div class="bar" title="${r.c}/${r.n} doğru"><i style="width:${100 * r.c / r.n}%"></i></div>
-        <span class="val"><b>${r.c}/${r.n}</b> · ${fmt(r.ts)}</span></div>`).join("")}</div>` : `<p class="empty">Henüz tamamlanmış bir tur yok. ${ROUND} soruyu bitirince burada görünecek.</p>`}
+        <span class="val"><b>${r.c}/${r.n}</b> · ${fmt(r.ts)}</span></div>`).join("")}</div>` : `<p class="empty">Henüz tamamlanmış bir test yok. ${ROUND} soruyu bitirince burada görünecek.</p>`}
     </div>`;
   box.querySelectorAll("[data-topic]").forEach(b => b.onclick = () => startRound("topic", b.dataset.topic));
   const sm = $("stMistakes"); if (sm) sm.onclick = () => startRound("mistakes");
@@ -913,6 +1071,7 @@ $("answer").addEventListener("keydown", e => { if (e.key === "Enter") { e.preven
 document.addEventListener("keydown", e => {
   if (e.key === "Enter" && checked && view === "practice") { e.preventDefault(); showQuestion(); }
 });
+$("patternBtn").onclick = () => { $("patternPre").hidden = !$("patternPre").hidden; $("answer").focus(); };
 $("hintBtn").onclick = hint;
 $("revealBtn").onclick = () => check("reveal");
 $("skipBtn").onclick = skip;
