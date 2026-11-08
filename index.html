@@ -1,0 +1,930 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Çeviri Pratiği</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f6f3ee; --card: #ffffff; --ink: #1f1c18; --muted: #6f675d; --line: #e4ddd2; --track: #efe9df;
+    --accent: #c2410c; --accent-ink: #ffffff;
+    --ok: #15803d; --ok-bg: #dcfce7; --bad: #b91c1c; --bad-bg: #fee2e2;
+    --typo: #a16207; --typo-bg: #fef3c7; --move: #7e22ce; --move-bg: #f3e8ff;
+    --miss-bg: #e0f2fe; --miss: #0369a1;
+    --shadow: 0 1px 2px rgba(0,0,0,.04), 0 8px 24px rgba(60,40,20,.06);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #17140f; --card: #211d17; --ink: #f1ebe2; --muted: #a39a8d; --line: #3a332a; --track: #2d2820;
+      --accent: #fb923c; --accent-ink: #1a1007;
+      --ok: #4ade80; --ok-bg: #14321f; --bad: #f87171; --bad-bg: #3b1616;
+      --typo: #fbbf24; --typo-bg: #3a2c0b; --move: #c084fc; --move-bg: #2e1a40;
+      --miss: #7dd3fc; --miss-bg: #0f2a3a; --shadow: none;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #17140f; --card: #211d17; --ink: #f1ebe2; --muted: #a39a8d; --line: #3a332a; --track: #2d2820;
+    --accent: #fb923c; --accent-ink: #1a1007;
+    --ok: #4ade80; --ok-bg: #14321f; --bad: #f87171; --bad-bg: #3b1616;
+    --typo: #fbbf24; --typo-bg: #3a2c0b; --move: #c084fc; --move-bg: #2e1a40;
+    --miss: #7dd3fc; --miss-bg: #0f2a3a; --shadow: none;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body { background: var(--bg); color: var(--ink); font-family: "DM Sans", system-ui, sans-serif; font-size: 16px; line-height: 1.5; min-height: 100vh; }
+  .wrap { max-width: 780px; margin: 0 auto; padding: 32px 16px 64px; }
+  header { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 18px; }
+  h1 { font-family: "Fraunces", Georgia, serif; font-weight: 600; font-size: 28px; margin: 0; letter-spacing: -.01em; }
+  h1 span { color: var(--accent); }
+  h2 { font-family: "Fraunces", Georgia, serif; font-weight: 600; font-size: 20px; margin: 0 0 12px; }
+  .stats { display: flex; gap: 18px; color: var(--muted); font-size: 14px; }
+  .stats b { color: var(--ink); font-variant-numeric: tabular-nums; }
+
+  .tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--line); margin-bottom: 18px; overflow-x: auto; }
+  .tab { background: none; border: none; font: inherit; font-weight: 600; font-size: 15px; color: var(--muted); padding: 10px 14px; cursor: pointer; border-bottom: 2.5px solid transparent; margin-bottom: -1px; white-space: nowrap; }
+  .tab[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--accent); }
+  .tab .count { background: var(--bad-bg); color: var(--bad); border-radius: 999px; padding: 0 7px; font-size: 12px; margin-left: 4px; }
+  .tab .count:empty { display: none; }
+
+  .levels { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 16px; }
+  .lvl { border: 1px solid var(--line); background: var(--card); color: var(--ink); padding: 7px 14px; border-radius: 999px; font: inherit; font-size: 14px; font-weight: 600; cursor: pointer; }
+  .lvl small { font-weight: 400; color: var(--muted); margin-left: 4px; }
+  .lvl:hover { border-color: var(--accent); }
+  .lvl[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+  .lvl[aria-pressed="true"] small { color: inherit; opacity: .8; }
+
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 18px; padding: 28px; box-shadow: var(--shadow); }
+  .card + .card { margin-top: 16px; }
+  .meta { display: flex; justify-content: space-between; gap: 10px; font-size: 13px; color: var(--muted); margin-bottom: 8px; text-transform: uppercase; letter-spacing: .06em; font-weight: 600; }
+  .roundbar { height: 4px; background: var(--track); border-radius: 4px; margin-bottom: 18px; overflow: hidden; }
+  .roundbar i { display: block; height: 100%; background: var(--accent); border-radius: 4px; transition: width .3s; }
+  .tr { font-family: "Fraunces", Georgia, serif; font-size: clamp(22px, 4.5vw, 30px); font-weight: 500; line-height: 1.3; margin: 0 0 6px; }
+  .topic { display: inline-block; font-size: 12.5px; color: var(--muted); border: 1px solid var(--line); border-radius: 999px; padding: 1px 10px; margin-bottom: 18px; }
+  .hint { color: var(--muted); font-size: 14px; margin: -6px 0 16px; letter-spacing: .04em; }
+  .hint:empty { display: none; }
+
+  .input-row { display: flex; gap: 10px; }
+  input[type=text] { flex: 1; min-width: 0; font: inherit; font-size: 18px; padding: 13px 16px; border-radius: 12px; border: 1.5px solid var(--line); background: var(--bg); color: var(--ink); outline: none; }
+  input[type=text]:focus { border-color: var(--accent); }
+  input[type=text]:disabled { opacity: .7; }
+  .btn { font: inherit; font-weight: 600; font-size: 15px; border-radius: 12px; padding: 12px 20px; cursor: pointer; border: 1.5px solid var(--accent); background: var(--accent); color: var(--accent-ink); white-space: nowrap; }
+  .btn:disabled { opacity: .45; cursor: default; }
+  .btn.ghost { background: transparent; color: var(--muted); border-color: var(--line); }
+  .btn.ghost:hover:not(:disabled) { color: var(--ink); border-color: var(--muted); }
+  .btn.small { padding: 6px 12px; font-size: 13.5px; border-radius: 10px; }
+  .tools { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
+  .tools .btn { padding: 7px 14px; font-size: 14px; }
+
+  .result { margin-top: 24px; border-top: 1px solid var(--line); padding-top: 22px; display: none; }
+  .result.show { display: block; }
+  .verdict { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 18px; margin-bottom: 14px; }
+  .verdict .score { margin-left: auto; font-size: 14px; color: var(--muted); font-weight: 600; font-variant-numeric: tabular-nums; }
+  .verdict.ok { color: var(--ok); } .verdict.almost { color: var(--typo); } .verdict.bad { color: var(--bad); }
+  .label { font-size: 12px; text-transform: uppercase; letter-spacing: .07em; color: var(--muted); font-weight: 600; margin: 14px 0 6px; }
+  .diff { display: flex; flex-wrap: wrap; gap: 6px; font-size: 17px; line-height: 1.4; }
+  .tok { padding: 3px 8px; border-radius: 7px; display: inline-flex; gap: 6px; align-items: baseline; }
+  .tok.eq { background: var(--ok-bg); color: var(--ok); }
+  .tok.sub { background: var(--bad-bg); color: var(--bad); }
+  .tok.typo { background: var(--typo-bg); color: var(--typo); }
+  .tok.extra { background: var(--bad-bg); color: var(--bad); text-decoration: line-through; opacity: .85; }
+  .tok.missing { background: var(--miss-bg); color: var(--miss); border: 1.5px dashed currentColor; padding: 1.5px 6.5px; }
+  .tok.moved { background: var(--move-bg); color: var(--move); }
+  .tok s { opacity: .7; }
+  .tok .fix { font-weight: 700; }
+  .tok .fix::before { content: "→ "; font-weight: 400; opacity: .7; }
+  .answer { font-size: 17px; font-weight: 500; }
+  .notes { margin: 12px 0 0; padding-left: 18px; color: var(--muted); font-size: 14px; }
+  .notes li { margin: 3px 0; }
+  details { margin-top: 12px; font-size: 14px; color: var(--muted); }
+  details summary { cursor: pointer; }
+  details ul { margin: 6px 0 0; padding-left: 18px; }
+  .legend { display: flex; flex-wrap: wrap; gap: 8px 14px; margin-top: 18px; font-size: 12.5px; color: var(--muted); }
+  .legend .tok { font-size: 12px; padding: 1px 7px; }
+
+  /* Tur özeti */
+  .summary { text-align: center; }
+  .big { font-family: "Fraunces", Georgia, serif; font-size: 64px; font-weight: 600; line-height: 1; margin: 6px 0; font-variant-numeric: tabular-nums; }
+  .big span { color: var(--muted); font-size: 32px; }
+  .summary .sub { color: var(--muted); margin: 0 0 18px; }
+  .summary .actions { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-top: 22px; }
+  .summary h3, .panel h3 { font-size: 13px; text-transform: uppercase; letter-spacing: .07em; color: var(--muted); margin: 22px 0 8px; text-align: left; }
+
+  /* Listeler / satırlar */
+  .mlist { list-style: none; padding: 0; margin: 0; text-align: left; }
+  .mlist li { border-top: 1px solid var(--line); padding: 12px 0; }
+  .mlist li:first-child { border-top: none; }
+  .mlist .q { font-weight: 600; }
+  .mlist .yours { color: var(--bad); font-size: 14.5px; }
+  .mlist .yours s { opacity: .9; }
+  .mlist .right { color: var(--ok); font-size: 14.5px; }
+  .mlist .chips { margin-top: 4px; display: flex; gap: 6px; flex-wrap: wrap; }
+  .chip { font-size: 12px; color: var(--muted); border: 1px solid var(--line); border-radius: 999px; padding: 0 8px; }
+
+  .tiles { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 16px; }
+  .tile { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 14px 16px; }
+  .tile .v { font-family: "Fraunces", Georgia, serif; font-size: 28px; font-weight: 600; font-variant-numeric: tabular-nums; line-height: 1.1; }
+  .tile .k { font-size: 13px; color: var(--muted); }
+  @media (max-width: 600px) { .tiles { grid-template-columns: repeat(2, 1fr); } }
+
+  .rows { display: grid; gap: 10px; }
+  .row { display: grid; grid-template-columns: minmax(90px, 190px) 1fr auto; align-items: center; gap: 12px; font-size: 14.5px; }
+  .row .name { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .row .val { color: var(--muted); font-size: 13.5px; font-variant-numeric: tabular-nums; white-space: nowrap; text-align: right; }
+  .row .val b { color: var(--ink); }
+  .bar { height: 10px; background: var(--track); border-radius: 5px; overflow: hidden; }
+  .bar i { display: block; height: 100%; background: var(--accent); border-radius: 5px; min-width: 2px; }
+  .row.topicrow { grid-template-columns: minmax(90px, 190px) 1fr auto auto; }
+  .empty { color: var(--muted); font-size: 14.5px; margin: 4px 0; }
+  .tips { margin: 0; padding-left: 0; list-style: none; display: grid; gap: 8px; }
+  .tips li { background: var(--bg); border-left: 3px solid var(--accent); border-radius: 0 10px 10px 0; padding: 10px 14px; font-size: 14.5px; }
+  .words { display: flex; flex-wrap: wrap; gap: 6px; }
+  .words .tok { font-size: 14px; }
+  .words .n { opacity: .7; font-size: 12px; }
+  .two { display: grid; grid-template-columns: 1fr 1fr; gap: 0 24px; }
+  @media (max-width: 600px) { .two { grid-template-columns: 1fr; } .row, .row.topicrow { grid-template-columns: 110px 1fr auto; } .row.topicrow .btn { grid-column: 1 / -1; justify-self: start; } }
+
+  footer { margin-top: 22px; color: var(--muted); font-size: 13px; display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+  footer button { background: none; border: none; color: inherit; font: inherit; cursor: pointer; text-decoration: underline; padding: 0; }
+  kbd { font-family: inherit; font-size: 12px; border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 5px; padding: 0 5px; }
+  [hidden] { display: none !important; }
+
+  @media (max-width: 540px) {
+    .card { padding: 20px; }
+    .input-row { flex-direction: column; }
+    #main { width: 100%; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Çeviri <span>Pratiği</span></h1>
+    <div class="stats">
+      <div>Doğruluk <b id="sAcc">–</b></div>
+      <div>Seri <b id="sStreak">0</b></div>
+      <div>En iyi <b id="sBest">0</b></div>
+    </div>
+  </header>
+
+  <nav class="tabs" role="tablist">
+    <button class="tab" role="tab" data-view="practice" aria-selected="true">Pratik</button>
+    <button class="tab" role="tab" data-view="stats" aria-selected="false">İstatistikler</button>
+    <button class="tab" role="tab" data-view="mistakes" aria-selected="false">Yanlışlarım <span class="count" id="mCount"></span></button>
+  </nav>
+
+  <!-- PRATİK -->
+  <section id="v-practice">
+    <div class="levels" id="levels" role="group" aria-label="Seviye"></div>
+    <main class="card">
+      <div id="qa">
+        <div class="meta"><span id="lvlTag"></span><span id="progress"></span></div>
+        <div class="roundbar"><i id="roundFill" style="width:0"></i></div>
+        <p class="tr" id="tr"></p>
+        <span class="topic" id="topic"></span>
+        <p class="hint" id="hint"></p>
+        <div class="input-row">
+          <input type="text" id="answer" placeholder="İngilizce çevirini yaz…" autocomplete="off" autocapitalize="off" spellcheck="false">
+          <button class="btn" id="main">Kontrol et</button>
+        </div>
+        <div class="tools">
+          <button class="btn ghost" id="hintBtn">İpucu</button>
+          <button class="btn ghost" id="revealBtn">Cevabı göster</button>
+          <button class="btn ghost" id="skipBtn">Atla</button>
+        </div>
+        <section class="result" id="result" aria-live="polite">
+          <div class="verdict" id="verdict"></div>
+          <div class="label">Senin cevabın</div>
+          <div class="diff" id="diff"></div>
+          <div class="label">Doğru cevap</div>
+          <div class="answer" id="correct"></div>
+          <ul class="notes" id="notes"></ul>
+          <details id="alts"><summary></summary><ul id="altList"></ul></details>
+          <div class="legend">
+            <span class="tok eq">doğru</span><span class="tok sub">yanlış kelime</span><span class="tok typo">yazım hatası</span>
+            <span class="tok extra">fazla</span><span class="tok missing">eksik</span><span class="tok moved">yanlış yerde</span>
+          </div>
+        </section>
+      </div>
+      <div id="summary" class="summary" hidden></div>
+    </main>
+  </section>
+
+  <!-- İSTATİSTİKLER -->
+  <section id="v-stats" hidden></section>
+
+  <!-- YANLIŞLARIM -->
+  <section id="v-mistakes" hidden></section>
+
+  <footer>
+    <span><kbd>Enter</kbd> kontrol et / sonraki · Noktalama ve büyük harf önemsizdir.</span>
+    <button id="resetBtn">Tüm verileri sıfırla</button>
+  </footer>
+</div>
+
+<script>
+/* ================= Konular ================= */
+const T = {
+  be: "be fiili (am/is/are)", gz: "Geniş zaman", sz: "Şimdiki zaman", there: "There is / are", iy: "İyelik (my / your)",
+  emir: "Emir cümleleri", soru: "Soru cümleleri", can: "can / could", gec: "Geçmiş zaman", gel: "Gelecek zaman",
+  kars: "Karşılaştırma", pp: "Present perfect", used: "used to", pc: "Past continuous", bag: "Bağlaçlar",
+  k1: "1. tip koşul", k2: "2. tip koşul", k3: "3. tip koşul", ed: "Edilgen yapı", ppc: "Present perfect continuous",
+  dol: "Dolaylı anlatım", wish: "wish / keşke", fk: "Fiil kalıpları (-ing / to)", zb: "Zaman bağlaçları",
+  zor: "Zorunluluk (must / have to)", pperf: "Past perfect", so: "so / such", mp: "Modal perfect", kal: "Kalıplar", dev: "Devrik yapı",
+};
+
+/* ================= Cümle bankası =================
+   [Türkçe, [kabul edilen çeviriler], konu]
+   {a|b} = alternatifler, {a|} = isteğe bağlı kelime. */
+const BANK = {
+  A1: [
+    ["Ben bir öğrenciyim.", ["I am a student."], "be"],
+    ["Kedim çok küçük.", ["My cat is very {small|little}."], "be"],
+    ["Her sabah kahve içerim.", ["I drink coffee every morning.", "Every morning I drink coffee."], "gz"],
+    ["Onun adı Ayşe.", ["{Her|His} name is Ayşe."], "iy"],
+    ["Bugün hava çok sıcak.", ["The weather is very hot today.", "It is very hot today.", "Today {the weather|it} is very hot."], "be"],
+    ["Kardeşim on yaşında.", ["My {brother|sister|sibling} is ten{ years old|}."], "be"],
+    ["Elma severim.", ["I {like|love} apples."], "gz"],
+    ["Okul evimin yanında.", ["The school is {next to|near|beside} my {house|home}."], "be"],
+    ["Bu kitap kırmızı.", ["This book is red."], "be"],
+    ["Annem bir öğretmen.", ["My {mother|mom|mum} is a teacher."], "iy"],
+    ["Masada iki kalem var.", ["There are two {pens|pencils} on the table."], "there"],
+    ["Ben Türkiye'denim.", ["I am from {Turkey|Türkiye}."], "be"],
+    ["Saat kaç?", ["What time is it?", "What is the time?"], "soru"],
+    ["Köpeğim parkta koşuyor.", ["My dog is running in the park."], "sz"],
+    ["Akşamları televizyon izleriz.", ["We watch {TV|television} in the {evenings|evening}."], "gz"],
+    ["Su içmek istiyorum.", ["I {want|would like} to drink {some |}water."], "gz"],
+    ["Babam araba kullanıyor.", ["My {father|dad} is driving{ a car| the car|}.", "My {father|dad} drives a car."], "sz"],
+    ["Onlar benim arkadaşlarım.", ["They are my friends."], "iy"],
+    ["Pencereyi aç, lütfen.", ["{Please open|Open} the window{, please|}."], "emir"],
+    ["Ekmek ve peynir yiyorum.", ["I am eating bread and cheese.", "I eat bread and cheese."], "sz"],
+    ["Ben her gün okula yürürüm.", ["I walk to school every day.", "Every day I walk to school."], "gz"],
+    ["O bir doktor.", ["{He|She} is a doctor."], "be"],
+    ["Şu an kahvaltı yapıyoruz.", ["We are {having|eating} breakfast {now|right now|at the moment}.", "We are {now |}{having|eating} breakfast."], "sz"],
+    ["Bu benim çantam.", ["This is my bag."], "iy"],
+    ["Senin kalemin nerede?", ["Where is your {pen|pencil}?"], "soru"],
+    ["İngilizce konuşabilirim.", ["I can speak English."], "can"],
+    ["Kız kardeşim gitar çalamaz.", ["My sister cannot play {the |}guitar."], "can"],
+    ["Buzdolabında süt var mı?", ["Is there {any |}milk in the {fridge|refrigerator}?"], "there"],
+    ["Hafta sonları futbol oynarız.", ["We play {football|soccer} {at|on} {the |}weekends."], "gz"],
+    ["Kapıyı kapat.", ["{Close|Shut} the door."], "emir"],
+    ["Onlar şimdi parkta oynuyorlar.", ["They are playing in the park {now|right now}.", "They are {now |}playing in the park."], "sz"],
+    ["Benim adım Can.", ["My name is Can."], "iy"],
+    ["Kaç yaşındasın?", ["How old are you?"], "soru"],
+    ["Bu ev çok büyük.", ["This house is very {big|large}."], "be"],
+    ["Odada üç sandalye var.", ["There are three chairs in the room."], "there"],
+    ["Babam her gün çalışır.", ["My {father|dad} works every day."], "gz"],
+    ["Bana yardım edebilir misin?", ["{Can|Could} you help me?"], "can"],
+    ["Lütfen sessiz olun.", ["{Please be quiet|Be quiet, please}."], "emir"],
+    ["Kahveyi sütlü severim.", ["I like {my |}coffee with milk."], "gz"],
+    ["Bugün pazartesi.", ["{Today is Monday|It is Monday{ today|}}."], "be"],
+  ],
+  A2: [
+    ["Dün akşam sinemaya gittik.", ["We went to the {cinema|movies} {last night|yesterday evening}.", "{Last night|Yesterday evening} we went to the {cinema|movies}."], "gec"],
+    ["Yarın erken kalkacağım.", ["I {will|am going to} {get up|wake up} early tomorrow.", "Tomorrow I {will|am going to} {get up|wake up} early."], "gel"],
+    ["Geçen yaz İzmir'i ziyaret ettim.", ["I visited İzmir last summer.", "Last summer I visited İzmir."], "gec"],
+    ["Kardeşimden daha uzunum.", ["I am taller than my {brother|sister|sibling}."], "kars"],
+    ["Telefonumu evde unuttum.", ["I {forgot|left} my phone at home."], "gec"],
+    ["Ne zaman geleceksin?", ["When will you come?", "When are you coming?", "When are you going to come?"], "gel"],
+    ["Çocukken çok kitap okurdum.", ["I {used to read|read} {a lot of|many|lots of} books when I was a {child|kid}.", "When I was a {child|kid}, I {used to read|read} {a lot of|many|lots of} books."], "used"],
+    ["Bu restoran şehirdeki en iyi restoran.", ["This {restaurant is|is} the best restaurant in {the city|town}.", "This restaurant is the best in {the city|town}."], "kars"],
+    ["Hafta sonu ne yaptın?", ["What did you do {at the|on the|over the|this|last} weekend?"], "gec"],
+    ["Yüzmeyi bilmiyorum.", ["I cannot swim.", "I do not know how to swim."], "can"],
+    ["Otobüs her on dakikada bir geliyor.", ["{The|A} bus {comes|arrives} every ten minutes."], "gz"],
+    ["Kahvaltıdan önce duş alırım.", ["I {take|have} a shower before breakfast.", "I shower before breakfast."], "gz"],
+    ["Biraz daha çay ister misin?", ["{Would you like|Do you want} {some more|more} tea?"], "can"],
+    ["Kapıyı kapatabilir misin?", ["{Can|Could} you {close|shut} the door?"], "can"],
+    ["Henüz ödevimi bitirmedim.", ["I have not finished my homework yet.", "I have not yet finished my homework."], "pp"],
+    ["Hasta olduğu için okula gitmedi.", ["{He|She} did not go to school because {he|she} was {sick|ill}.", "Because {he|she} was {sick|ill}, {he|she} did not go to school."], "bag"],
+    ["Annemle telefonda konuşuyordum.", ["I was {talking|speaking} {to|with} my {mother|mom|mum} on the phone."], "pc"],
+    ["Bu ayakkabılar çok pahalı.", ["These shoes are {very|too} expensive."], "be"],
+    ["Dün çok yorgundum.", ["I was very tired yesterday.", "Yesterday I was very tired."], "gec"],
+    ["Geçen hafta yeni bir araba aldı.", ["{He|She} bought a new car last week.", "Last week {he|she} bought a new car."], "gec"],
+    ["Yarın yağmur yağacak.", ["It {will|is going to} rain tomorrow.", "Tomorrow it {will|is going to} rain."], "gel"],
+    ["Gelecek yıl Londra'ya taşınacağız.", ["We {will|are going to} move to London next year.", "We are moving to London next year.", "Next year we {will|are going to} move to London."], "gel"],
+    ["Bu çanta o çantadan daha ucuz.", ["This bag is cheaper than that {bag|one}.", "This bag is cheaper than that."], "kars"],
+    ["Dünyanın en yüksek dağı hangisi?", ["{What|Which} is the highest mountain in the world?", "Which mountain is the highest in the world?"], "kars"],
+    ["Hiç sushi yedin mi?", ["Have you ever {eaten|had|tried} sushi?"], "pp"],
+    ["Anahtarlarımı kaybettim.", ["I have lost my keys.", "I lost my keys."], "pp"],
+    ["Eskiden bu şehirde yaşardık.", ["We used to live in this {city|town}."], "used"],
+    ["Eskiden sigara içerdi.", ["{He|She} used to smoke."], "used"],
+    ["Telefon çaldığında duş alıyordum.", ["I was {taking|having} a shower when the phone rang.", "When the phone rang, I was {taking|having} a shower.", "I was showering when the phone rang."], "pc"],
+    ["Saat sekizde ne yapıyordun?", ["What were you doing at eight{ o'clock|}?"], "pc"],
+    ["Pencereyi açabilir miyim?", ["{Can|May|Could} I open the window?"], "can"],
+    ["Bana tuzu uzatır mısın?", ["{Can|Could|Would} you pass {me |}the salt?"], "can"],
+    ["Yorgun olduğum için erken yattım.", ["I went to bed early because I was tired.", "Because I was tired, I went to bed early."], "bag"],
+    ["Eve geldiğimde annem yemek pişiriyordu.", ["When I {came|got} home, my {mother|mom|mum} was cooking.", "My {mother|mom|mum} was cooking when I {came|got} home."], "pc"],
+    ["Kardeşim benden daha hızlı koşar.", ["My {brother|sister} runs faster than {me|I do}."], "kars"],
+    ["Bu yaz tatile gitmeyeceğiz.", ["We {will not|are not going to} go on {holiday|vacation} this summer."], "gel"],
+    ["Ona daha önce hiç yalan söylemedim.", ["I have never lied to {him|her} before."], "pp"],
+    ["Partide çok eğlendik.", ["We had {a lot of|lots of|great} fun at the party.", "We had a great time at the party."], "gec"],
+    ["Hava soğuk ama güneşli.", ["{The weather|It} is cold but sunny."], "bag"],
+    ["Sınav kolaydı, bu yüzden herkes geçti.", ["The exam was easy, so everyone passed{ it|}.", "Everyone passed because the exam was easy."], "bag"],
+  ],
+  B1: [
+    ["Eğer zamanım olursa, sana yardım ederim.", ["If I have time, I will help you.", "I will help you if I have time."], "k1"],
+    ["Bu köprü 1990 yılında inşa edildi.", ["This bridge was built in 1990."], "ed"],
+    ["Üç yıldır İngilizce öğreniyorum.", ["I have been {learning|studying} English for three years."], "ppc"],
+    ["Toplantının iptal edildiğini bilmiyordum.", ["I did not know {that |}the meeting {had been|was} {cancelled|canceled}."], "pperf"],
+    ["Keşke daha fazla boş zamanım olsa.", ["{I wish|If only} I had more {free|spare} time."], "wish"],
+    ["Bu filmi daha önce hiç izlemedim.", ["I have never {watched|seen} this {film|movie} before."], "pp"],
+    ["Bana yolu gösterdiğiniz için teşekkür ederim.", ["{Thank you|Thanks} for showing me the way."], "fk"],
+    ["Sigarayı bırakmaya karar verdi.", ["{He|She} decided to {quit|stop|give up} smoking."], "fk"],
+    ["Trafik yüzünden toplantıya geç kaldım.", ["I was late {for|to} the meeting because of {the |}traffic.", "Because of {the |}traffic, I was late {for|to} the meeting."], "bag"],
+    ["Bu soruyu cevaplamak zorunda değilsin.", ["You do not {have|need} to answer this question."], "zor"],
+    ["Gelmeden önce beni ara.", ["Call me before you come.", "Call me before coming."], "zb"],
+    ["Odası her zaman dağınıktır.", ["{His|Her} room is always {messy|untidy}."], "be"],
+    ["Paris'e hiç gittin mi?", ["Have you ever been to Paris?"], "pp"],
+    ["Yağmur yağmaya başlayınca eve döndük.", ["When it started {to rain|raining}, we {went back|returned|went} home.", "We {went back|returned|went} home when it started {to rain|raining}."], "zb"],
+    ["Bu çantayı taşımama yardım eder misin?", ["{Can|Could|Will|Would} you help me {carry|to carry} this bag?"], "can"],
+    ["Bu mektup İngilizce yazılmış.", ["This letter {is|was|has been} written in English."], "ed"],
+    ["Ona doğruyu söylemeni öneririm.", ["I {suggest|recommend} {that you tell|telling} {him|her} the truth.", "I advise you to tell {him|her} the truth."], "fk"],
+    ["Yarın hava güzel olursa pikniğe gideceğiz.", ["If the weather is {nice|good} tomorrow, we will go {on|for} a picnic.", "We will go {on|for} a picnic if the weather is {nice|good} tomorrow."], "k1"],
+    ["Acele etmezsen otobüsü kaçıracaksın.", ["If you do not hurry{ up|}, you will miss the bus.", "You will miss the bus if you do not hurry{ up|}.", "Unless you hurry{ up|}, you will miss the bus."], "k1"],
+    ["İngilizce dünyanın her yerinde konuşulur.", ["English is spoken {all over the world|everywhere in the world|around the world}."], "ed"],
+    ["Cüzdanım dün çalındı.", ["My wallet was stolen yesterday.", "Yesterday my wallet was stolen."], "ed"],
+    ["Sabahtan beri seni bekliyorum.", ["I have been waiting for you since {the morning|this morning|morning}."], "ppc"],
+    ["Ne kadar zamandır burada çalışıyorsun?", ["How long have you been working here?"], "ppc"],
+    ["Bana yorgun olduğunu söyledi.", ["{He|She} told me {that |}{he|she} was tired.", "{He|She} said {that |}{he|she} was tired."], "dol"],
+    ["Bana nerede yaşadığımı sordu.", ["{He|She} asked {me |}where I lived."], "dol"],
+    ["Keşke araba kullanmayı bilsem.", ["{I wish|If only} I {could drive|knew how to drive}."], "wish"],
+    ["Dans etmekten hoşlanırım.", ["I {like|enjoy|love} dancing.", "I like to dance."], "fk"],
+    ["Yeni bir dil öğrenmeye karar verdim.", ["I {decided|have decided} to learn a new language."], "fk"],
+    ["Pencereyi açmayı unutma.", ["Do not forget to open the window.", "Remember to open the window."], "fk"],
+    ["Ödevimi bitirir bitirmez seni arayacağım.", ["I will call you as soon as I {finish|have finished} my homework.", "As soon as I {finish|have finished} my homework, I will call you."], "zb"],
+    ["Sen gelene kadar bekleyeceğim.", ["I will wait {for you |}{until|till} you come."], "zb"],
+    ["Yarın erken kalkmam gerekiyor.", ["I {have to|need to|must} {get up|wake up} early tomorrow.", "Tomorrow I {have to|need to|must} {get up|wake up} early."], "zor"],
+    ["Burada sigara içmemelisin.", ["You {must not|should not|cannot} smoke here.", "You are not allowed to smoke here."], "zor"],
+    ["Doktor daha çok su içmemi söyledi.", ["The doctor told me to drink more water.", "The doctor said {that |}I should drink more water."], "dol"],
+    ["Bu ev yüz yıl önce yapıldı.", ["This house was built {a|one} hundred years ago."], "ed"],
+    ["Daha önce hiç bu kadar mutlu olmamıştım.", ["I had never been {so|this} happy before."], "pperf"],
+    ["Oraya vardığımızda film başlamıştı.", ["When we {arrived|got there|arrived there}, the {film|movie} had {already |}started.", "The {film|movie} had {already |}started when we {arrived|got there|arrived there}."], "pperf"],
+    ["Kullanmadan önce talimatları oku.", ["Read the instructions before {using it|you use it|use}."], "zb"],
+    ["Yorgun olmasına rağmen çalışmaya devam etti.", ["{Although|Even though} {he|she} was tired, {he|she} {continued working|continued to work|kept working|kept on working}.", "{He|She} {continued working|continued to work|kept working|kept on working} {although|even though} {he|she} was tired."], "bag"],
+  ],
+  B2: [
+    ["Daha dikkatli olsaydın, bu hatayı yapmazdın.", ["If you had been more careful, you would not have made {this|that} mistake.", "You would not have made {this|that} mistake if you had been more careful."], "k3"],
+    ["Yeni bir ev almayı düşünüyoruz.", ["We are {thinking of|thinking about|considering} buying a new {house|home}."], "fk"],
+    ["Raporun cumaya kadar bitirilmesi gerekiyor.", ["The report {needs to|has to|must} be {finished|completed} by Friday."], "ed"],
+    ["O kadar yorgundum ki hemen uyudum.", ["I was so tired {that |}I fell asleep {immediately|right away|at once|straight away}."], "so"],
+    ["Bu konuda ne düşündüğünü merak ediyorum.", ["I wonder what you think about this{ issue| subject| matter| topic|}.", "I am curious {about |}what you think about this{ issue| subject| matter| topic|}."], "dol"],
+    ["Sözleşmeyi imzalamadan önce dikkatlice okumalısın.", ["You {should|must} read the contract carefully before {signing it|you sign it}.", "You {should|must} carefully read the contract before {signing it|you sign it}."], "zor"],
+    ["Arabam tamir ediliyor, bu yüzden otobüsle geldim.", ["My car is being {repaired|fixed}, so I came by bus.", "I came by bus because my car is being {repaired|fixed}."], "ed"],
+    ["Ne kadar çok çalışırsan o kadar başarılı olursun.", ["The {harder|more} you work, the more successful you {will be|become|are}."], "kars"],
+    ["Saçımı kestirmem lazım.", ["I need to {get|have} my hair cut.", "I need {a haircut|to get a haircut}."], "kal"],
+    ["Sınavı geçmesi pek olası değil.", ["{He|She} is {unlikely|not likely} to pass the exam.", "It is unlikely that {he|she} will pass the exam."], "kal"],
+    ["Keşke ona gerçeği söyleseydim.", ["{I wish|If only} I had told {him|her} the truth."], "wish"],
+    ["Bu kadar erken gelmene gerek yoktu.", ["You did not {need|have} to come so early.", "You need not have come so early.", "There was no need for you to come so early."], "mp"],
+    ["İşten kovulduğunu duyunca çok şaşırdım.", ["I was {very|really} surprised {when I heard|to hear} {that |}{he|she} {had been|was} fired."], "ed"],
+    ["Bu ürünün fiyatı geçen yıldan beri iki katına çıktı.", ["The price of this product has doubled since last year."], "pp"],
+    ["Zengin olsaydım dünyayı gezerdim.", ["If I {were|was} rich, I would travel {around the world|the world}.", "I would travel {around the world|the world} if I {were|was} rich."], "k2"],
+    ["Senin yerinde olsam o işi kabul ederdim.", ["If I {were|was} you, I would {accept|take} {that|the} job.", "I would {accept|take} {that|the} job if I {were|was} you.", "If I were in your {place|shoes}, I would {accept|take} {that|the} job."], "k2"],
+    ["Daha erken çıksaydık treni kaçırmazdık.", ["If we had left earlier, we would not have missed the train.", "We would not have missed the train if we had left earlier."], "k3"],
+    ["Hava güzel olmasaydı evde kalırdık.", ["If the weather had not been {nice|good}, we would have stayed {at |}home.", "We would have stayed {at |}home if the weather had not been {nice|good}."], "k3"],
+    ["O kadar güzel bir gündü ki yürüyüşe çıktık.", ["It was such a {nice|beautiful|lovely} day {that |}we went for a walk."], "so"],
+    ["Film o kadar sıkıcıydı ki uyuyakaldım.", ["The {film|movie} was so boring {that |}I fell asleep."], "so"],
+    ["Anahtarlarını arabada unutmuş olmalı.", ["{He|She} must have {left|forgotten} {his|her} keys in the car."], "mp"],
+    ["Bana önceden haber vermeliydin.", ["You should have {told me|let me know} {in advance|beforehand|earlier|before}."], "mp"],
+    ["Trafikte sıkışmış olabilirler.", ["They {might|may|could} have {got|gotten} stuck in traffic."], "mp"],
+    ["Evim şu anda boyanıyor.", ["My house is being painted {now|right now|at the moment}.", "My house is {now |currently |}being painted."], "ed"],
+    ["Bu sorun daha önce tartışılmıştı.", ["This {problem|issue} had {already |}been discussed{ before|}."], "ed"],
+    ["Toplantılarda konuşmaya alışkın değilim.", ["I am not used to speaking {at|in} meetings."], "kal"],
+    ["Sana yardım etmekten mutluluk duyarım.", ["I would be {happy|glad} to help you.", "I am {happy|glad} to help you."], "kal"],
+    ["Ne yapacağıma henüz karar vermedim.", ["I have not {yet |}decided what {to do|I will do|I am going to do}{ yet|}."], "pp"],
+    ["Onu bir yerden tanıyor gibiyim.", ["I seem to know {him|her} from somewhere.", "I feel like I know {him|her} from somewhere."], "kal"],
+    ["Gelmeyi planlıyordum ama hastalandım.", ["I was planning to come{,|} but I {got|fell|became} {sick|ill}."], "pc"],
+    ["Biletler tükenmeden önce almalıyız.", ["We {should|must|need to|have to} buy the tickets before they {sell out|are sold out|run out}."], "zb"],
+    ["Çok çalışmasına rağmen sınavı geçemedi.", ["{Although|Even though} {he|she} studied {hard|a lot}, {he|she} {could not|did not|failed to} pass the exam.", "{Despite|In spite of} studying {hard|a lot}, {he|she} {could not|did not|failed to} pass the exam."], "bag"],
+    ["Ne kadar erken başlarsak o kadar erken bitiririz.", ["The {earlier|sooner} we start, the {earlier|sooner} we {will finish|finish}."], "kars"],
+    ["Bu kitap okumaya değer.", ["This book is worth reading.", "It is worth reading this book."], "kal"],
+    ["Çocukların gece geç saatte dışarı çıkmasına izin verilmez.", ["Children are not allowed to go out late at night."], "ed"],
+    ["Bu raporu kimin yazdığını biliyor musun?", ["Do you know who wrote this report?"], "dol"],
+    ["Trenin saat kaçta kalktığını söyleyebilir misiniz?", ["{Can|Could} you tell me {what time|when} the train {leaves|departs}?"], "dol"],
+    ["Yarın bu saatte uçakta olacağım.", ["{This time|At this time} tomorrow{,|} I will be on the plane.", "I will be on the plane {this time|at this time} tomorrow."], "gel"],
+    ["Gelecek ay bu zamana kadar projeyi bitirmiş olacağız.", ["We will have {finished|completed} the project by this time next month.", "By this time next month, we will have {finished|completed} the project."], "gel"],
+    ["Benim için en önemli şey sağlık.", ["The most important thing {for|to} me is health.", "{For|To} me, the most important thing is health.", "Health is the most important thing {for|to} me."], "kars"],
+  ],
+  C1: [
+    ["Ekonomik krize rağmen şirket kârını artırmayı başardı.", ["{Despite|In spite of} the economic crisis, the company managed to increase its {profit|profits}.", "The company managed to increase its {profit|profits} {despite|in spite of} the economic crisis."], "bag"],
+    ["Bu kararın uzun vadeli sonuçları henüz belli değil.", ["The long-term {consequences|effects} of this decision are not {yet clear|clear yet}.", "The long-term {consequences|effects} of this decision are still unclear."], "kal"],
+    ["Hiçbir koşulda bu belgeyi kimseyle paylaşmamalısın.", ["Under no circumstances {should|must} you share this document with anyone.", "You {should|must} not share this document with anyone under any circumstances."], "dev"],
+    ["Önerisi, toplantıdaki herkes tarafından sıcak karşılandı.", ["{His|Her} {proposal|suggestion} was warmly {welcomed|received} by everyone {at|in} the meeting."], "ed"],
+    ["Uyarıları dikkate almış olsaydık, bu felaketten kaçınabilirdik.", ["{If we had|Had we} {taken the warnings into account|heeded the warnings|paid attention to the warnings}, we could have avoided this disaster."], "k3"],
+    ["Bu teorinin geçerliliği uzun süredir tartışılıyor.", ["The validity of this theory has been {debated|discussed|questioned} for a long time.", "The validity of this theory has long been {debated|discussed|questioned}."], "ed"],
+    ["Ne kadar uğraşırsa uğraşsın, onu ikna edemedi.", ["{No matter how hard|However hard} {he|she} tried, {he|she} could not {convince|persuade} {him|her}."], "kal"],
+    ["Bu proje ancak tüm ekibin desteğiyle başarıya ulaşabilir.", ["This project can only {succeed|be successful} with the support of the {whole|entire} team.", "Only with the support of the {whole|entire} team can this project succeed."], "dev"],
+    ["Yetkililer olayla ilgili soruşturma başlattı.", ["{The |}authorities {have |}{launched|started|opened} an investigation into the {incident|event}."], "kal"],
+    ["Teknolojinin hayatımızı ne denli değiştirdiğinin farkında değiliz.", ["We are {not aware|unaware} of how much technology has changed our lives.", "We do not realize how much technology has changed our lives."], "dol"],
+    ["Eleştirilere rağmen kararından vazgeçmedi.", ["{Despite|In spite of} the criticism, {he|she} did not {give up|abandon|back down from} {his|her} decision.", "{He|She} did not {give up|abandon|back down from} {his|her} decision {despite|in spite of} the criticism."], "bag"],
+    ["Bu durumun önümüzdeki yıllarda daha da kötüleşmesi bekleniyor.", ["This situation is expected to {get|become|grow} {even |}worse in the {coming|next} years.", "This situation is expected to worsen {even further |}in the {coming|next} years."], "ed"],
+    ["Daha önce hiç bu kadar güzel bir manzara görmemiştim.", ["Never {before |}had I seen such a beautiful {view|landscape|scenery}.", "I had never seen such a beautiful {view|landscape|scenery}{ before|}."], "dev"],
+    ["Eve varır varmaz yağmur yağmaya başladı.", ["No sooner had I {arrived|got} home than it started {to rain|raining}.", "As soon as I {arrived|got} home, it started {to rain|raining}.", "Hardly had I {arrived|got} home when it started {to rain|raining}."], "dev"],
+    ["Ancak o zaman hatamın farkına vardım.", ["Only then did I {realize|notice|become aware of} my mistake."], "dev"],
+    ["Sadece ünlü bir yazar değil, aynı zamanda yetenekli bir ressamdı.", ["{He|She} was not only a famous writer{,|} but also a {talented|gifted} painter.", "Not only was {he|she} a famous writer, but {he|she} was also a {talented|gifted} painter."], "dev"],
+    ["Bilim insanları yeni bir tür keşfettiklerini açıkladı.", ["Scientists {have announced|announced} that they {have discovered|had discovered|discovered} a new species."], "dol"],
+    ["Binanın gelecek yıl yıkılacağı söyleniyor.", ["It is said that the building will be {demolished|torn down} next year.", "The building is said to be {demolished|torn down} next year.", "They say {that |}the building will be {demolished|torn down} next year."], "ed"],
+    ["Toplantının ertelenmesi önerildi.", ["It was {suggested|proposed} that the meeting {should be|be} postponed."], "ed"],
+    ["Ne olursa olsun, sana her zaman destek olacağım.", ["{No matter what happens|Whatever happens}, I will always {support you|be there for you}."], "kal"],
+    ["Haklı olmasına rağmen kimse onu dinlemedi.", ["{Although|Even though} {he|she} was right, {nobody|no one} listened to {him|her}.", "{Nobody|No one} listened to {him|her} {although|even though} {he|she} was right."], "bag"],
+    ["Bu konuda uzman olmadığımı kabul etmeliyim.", ["I {must|have to} admit {that |}I am not an expert {on|in} this {subject|topic|field|area|matter}."], "kal"],
+    ["Söylediklerini ciddiye almamalıydın.", ["You should not have taken what {he|she} said seriously.", "You should not have taken {his|her} words seriously."], "mp"],
+    ["O sırada orada olsaydım, belki her şey farklı olurdu.", ["{If I had been|Had I been} there {at that time|then|at the time}, {maybe |perhaps |}everything {would|might|could} have been different."], "k3"],
+    ["Şirket, maliyetleri düşürmek için yüzlerce çalışanını işten çıkardı.", ["The company {laid off|fired|dismissed} hundreds of {employees|workers|its employees} {in order to|to} {reduce|cut} costs.", "{In order to|To} {reduce|cut} costs, the company {laid off|fired|dismissed} hundreds of {employees|workers|its employees}."], "kal"],
+    ["Bu ilacın yan etkileri hakkında yeterli bilgi yok.", ["There is {not enough|insufficient} information {about|on} the side effects of this {medicine|drug|medication}."], "there"],
+    ["Ne kadar çok öğrenirsem, o kadar az bildiğimi fark ediyorum.", ["The more I learn, the more I {realize|understand} how little I know."], "kars"],
+    ["Gelmeyeceğini bilseydim, seni beklemezdim.", ["{If I had known|Had I known} {that |}you {were not coming|would not come|were not going to come}, I would not have waited for you."], "k3"],
+    ["Çevre kirliliği giderek ciddi bir sorun haline geliyor.", ["{Environmental pollution|Pollution} is becoming {an increasingly|a more and more|an ever more} serious {problem|issue}.", "{Environmental pollution|Pollution} is increasingly becoming a serious {problem|issue}."], "kal"],
+    ["Konuşmasını bitirir bitirmez salondan ayrıldı.", ["As soon as {he|she} finished {his|her} speech, {he|she} left the {hall|room}.", "No sooner had {he|she} finished {his|her} speech than {he|she} left the {hall|room}."], "dev"],
+    ["Bu kararın arkasında kimin olduğu hâlâ bilinmiyor.", ["It is still {unknown|not known} who is behind this decision.", "Who is behind this decision is still unknown."], "ed"],
+    ["Seçim sonuçları beklentilerin çok altında kaldı.", ["The election results were {far|well|much} below {the |}expectations.", "The election results fell {far|well|much} short of {the |}expectations."], "kal"],
+    ["Sorunu çözmek için elimizden gelen her şeyi yaptık.", ["We did everything we could to solve the problem.", "We did our best to solve the problem.", "We have done everything we can to solve the problem."], "kal"],
+    ["Ona güvenmemem gerektiğini biliyordum.", ["I knew {that |}I {should not|must not|ought not to} trust {him|her}.", "I knew {that |}I should not have trusted {him|her}."], "mp"],
+    ["Bu konuyu daha ayrıntılı ele almamız gerekiyor.", ["We need to {deal with|address|discuss|handle} this {issue|matter|topic|subject} in more detail."], "zor"],
+    ["Fiyatların önümüzdeki ay artacağı tahmin ediliyor.", ["Prices are {expected|predicted|forecast} to {rise|increase|go up} next month.", "It is {expected|predicted} that prices will {rise|increase|go up} next month."], "ed"],
+    ["Hiç beklemediğim bir anda kapı çaldı.", ["The {doorbell|door} rang when I least expected it.", "There was a knock {at|on} the door when I least expected it."], "kal"],
+    ["Bu sorunun çözümü sandığımızdan çok daha karmaşık.", ["The solution to this problem is {much|far} more {complicated|complex} than we {thought|had thought|expected|imagined}."], "kars"],
+  ],
+};
+const LEVELS = ["A1", "A2", "B1", "B2", "C1"];
+const LEVEL_NAMES = { A1: "Başlangıç", A2: "Temel", B1: "Orta", B2: "İyi", C1: "İleri" };
+const ROUND = 20;
+
+const ALL = [], BY = {};
+for (const l of LEVELS) for (const [tr, raw, t] of BANK[l]) { const s = { id: tr, l, tr, raw, t }; ALL.push(s); BY[tr] = s; }
+
+/* ================= {a|b} genişletme ================= */
+function expand(s) {
+  const i = s.indexOf("{");
+  if (i < 0) return [s];
+  let depth = 0, j = i, parts = [], start = i + 1;
+  for (; j < s.length; j++) {
+    const c = s[j];
+    if (c === "{") depth++;
+    else if (c === "}") { depth--; if (depth === 0) { parts.push(s.slice(start, j)); break; } }
+    else if (c === "|" && depth === 1) { parts.push(s.slice(start, j)); start = j + 1; }
+  }
+  const pre = s.slice(0, i), post = s.slice(j + 1), out = [];
+  for (const p of parts) for (const e of expand(pre + p + post)) out.push(e.replace(/\s+/g, " ").replace(/\s+([,.?!])/g, "$1").replace(/,+/g, ",").trim());
+  return [...new Set(out)];
+}
+function prep(s) { if (!s.answers) { s.answers = s.raw.flatMap(expand); s.norm = s.answers.map(normalize); } return s; }
+
+/* ================= Normalleştirme ================= */
+const SPELL = { colour: "color", cancelled: "canceled", travelling: "traveling", favourite: "favorite", realise: "realize",
+  organise: "organize", centre: "center", theatre: "theater", criticise: "criticize", apologise: "apologize", grey: "gray" };
+const NUM = { "0": "zero", "1": "one", "2": "two", "3": "three", "4": "four", "5": "five", "6": "six", "7": "seven", "8": "eight", "9": "nine", "10": "ten", "100": "hundred" };
+function normalize(text) {
+  let t = text.toLowerCase().replace(/[’‘`´]/g, "'").replace(/ı/g, "i").normalize("NFD").replace(/[̀-ͯ]/g, "");
+  t = t.replace(/\bwon't\b/g, "will not").replace(/\bcan't\b/g, "cannot").replace(/\bshan't\b/g, "shall not")
+       .replace(/n't\b/g, " not").replace(/'m\b/g, " am").replace(/'re\b/g, " are").replace(/'ve\b/g, " have")
+       .replace(/'ll\b/g, " will").replace(/'d\b/g, " would").replace(/\blet's\b/g, "let us")
+       .replace(/\b(he|she|it|that|there|what|who|where|here|how)'s\b/g, "$1 is")
+       .replace(/\bcan not\b/g, "cannot");
+  t = t.replace(/['"]/g, "").replace(/[-–—\/]/g, " ").replace(/[^a-z0-9\s]/g, " ");
+  return t.split(/\s+/).filter(Boolean).map(w => SPELL[w] || NUM[w] || w);
+}
+
+/* ================= Karşılaştırma ================= */
+function lev(a, b) {
+  const m = a.length, n = b.length; let prev = Array.from({ length: n + 1 }, (_, j) => j);
+  for (let i = 1; i <= m; i++) {
+    const cur = [i];
+    for (let j = 1; j <= n; j++) cur[j] = Math.min(prev[j] + 1, cur[j - 1] + 1, prev[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+    prev = cur;
+  }
+  return prev[n];
+}
+function isTypo(a, b) {
+  if (Math.max(a.length, b.length) < 4) return false;
+  return lev(a, b) <= (Math.max(a.length, b.length) <= 6 ? 1 : 2);
+}
+function align(user, ref) {
+  const m = user.length, n = ref.length;
+  const D = Array.from({ length: m + 1 }, () => new Array(n + 1).fill(0));
+  for (let i = 0; i <= m; i++) D[i][0] = i;
+  for (let j = 0; j <= n; j++) D[0][j] = j;
+  const subCost = (a, b) => a === b ? 0 : isTypo(a, b) ? 0.5 : 1;
+  for (let i = 1; i <= m; i++) for (let j = 1; j <= n; j++)
+    D[i][j] = Math.min(D[i - 1][j] + 1, D[i][j - 1] + 1, D[i - 1][j - 1] + subCost(user[i - 1], ref[j - 1]));
+  const ops = []; let i = m, j = n;
+  while (i > 0 || j > 0) {
+    if (i > 0 && j > 0 && D[i][j] === D[i - 1][j - 1] + subCost(user[i - 1], ref[j - 1])) {
+      const a = user[i - 1], b = ref[j - 1];
+      ops.push({ type: a === b ? "eq" : isTypo(a, b) ? "typo" : "sub", u: a, r: b }); i--; j--;
+    } else if (i > 0 && D[i][j] === D[i - 1][j] + 1) { ops.push({ type: "extra", u: user[i - 1] }); i--; }
+    else { ops.push({ type: "missing", r: ref[j - 1] }); j--; }
+  }
+  ops.reverse();
+  for (let k = 0; k + 1 < ops.length; k++) {
+    const a = ops[k], b = ops[k + 1];
+    if (a.type === "sub" && b.type === "sub" && a.u === b.r && b.u === a.r) { a.type = b.type = "moved"; k++; }
+  }
+  for (const op of ops) {
+    if (op.type !== "extra") continue;
+    const twin = ops.find(o => o.type === "missing" && o.r === op.u && !o.paired);
+    if (twin) { op.type = "moved"; twin.type = "movedTarget"; twin.paired = true; }
+  }
+  return { cost: D[m][n], ops };
+}
+
+/* ================= Kayıt ================= */
+const store = {
+  get(k, d) { try { const v = localStorage.getItem("cp2_" + k); return v === null ? d : JSON.parse(v); } catch { return d; } },
+  set(k, v) { try { localStorage.setItem("cp2_" + k, JSON.stringify(v)); } catch {} },
+};
+let attempts = store.get("attempts", []);   // {id,l,t,s,p,ts,u,r,e:[{y,u,r}]}
+let rounds = store.get("rounds", []);       // {ts,label,mode,c,n}
+let meta = store.get("meta", { streak: 0, best: 0 });
+let level = store.get("level", "A1"); if (level !== "MIX" && !BANK[level]) level = "A1";
+let round = store.get("round", null);
+if (round && !(round.ids || []).every(id => BY[id])) round = null;
+
+const isOk = s => s === "ok" || s === "typo";
+const STATUS_TR = { ok: "doğru", typo: "yazım hatası", hint: "ipucuyla", wrong: "yanlış", revealed: "cevap gösterildi", skipped: "atlandı" };
+
+function saveAll() { store.set("attempts", attempts.slice(-3000)); store.set("rounds", rounds.slice(-300)); store.set("meta", meta); store.set("round", round); }
+
+function infoMap() {
+  const m = {};
+  for (const a of attempts) {
+    const x = m[a.id] || (m[a.id] = { n: 0, wrong: 0 });
+    x.n++; if (!isOk(a.s)) x.wrong++; x.last = a.ts; x.lastOk = isOk(a.s); x.lastA = a;
+  }
+  return m;
+}
+function shuffle(a) { a = [...a]; for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
+
+function buildRound(mode, key) {
+  const info = infoMap(); let cands, label;
+  if (mode === "level") { cands = key === "MIX" ? ALL : ALL.filter(s => s.l === key); label = key === "MIX" ? "Karışık" : key; }
+  else if (mode === "topic") { cands = ALL.filter(s => s.t === key); label = T[key]; }
+  else if (mode === "mistakes") { cands = ALL.filter(s => info[s.id] && !info[s.id].lastOk); label = "Yanlışlarım"; }
+  else { cands = key.map(id => BY[id]).filter(Boolean); label = "Tekrar"; }
+  // Önce hiç görülmemiş, sonra yanlış yapılmış, sonra en uzun süredir görülmemiş cümleler
+  const unseen = shuffle(cands.filter(s => !info[s.id]));
+  const wrong = shuffle(cands.filter(s => info[s.id] && !info[s.id].lastOk));
+  const rest = cands.filter(s => info[s.id] && info[s.id].lastOk).sort((a, b) => info[a.id].last - info[b.id].last);
+  const picked = [...unseen, ...wrong, ...rest].slice(0, ROUND);
+  const no = rounds.filter(r => r.label === label).length + 1;
+  return { mode, key: mode === "ids" ? null : key, label, no, ids: shuffle(picked.map(s => s.id)), results: [], done: false };
+}
+
+/* ================= Arayüz ================= */
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+let current = null, checked = false, hintStep = 0, usedHelp = false, view = "practice";
+
+function renderLevels() {
+  const box = $("levels"); box.innerHTML = "";
+  [...LEVELS, "MIX"].forEach(l => {
+    const b = document.createElement("button");
+    b.className = "lvl"; b.setAttribute("aria-pressed", round && round.mode === "level" && round.key === l);
+    b.innerHTML = l === "MIX" ? "Karışık" : `${l}<small>${LEVEL_NAMES[l]}</small>`;
+    b.onclick = () => { level = l; store.set("level", l); startRound("level", l); };
+    box.appendChild(b);
+  });
+}
+function renderHeader() {
+  const n = attempts.length, ok = attempts.filter(a => isOk(a.s)).length;
+  $("sAcc").textContent = n ? `%${Math.round(100 * ok / n)}` : "–";
+  $("sStreak").textContent = meta.streak; $("sBest").textContent = meta.best;
+  const info = infoMap();
+  $("mCount").textContent = Object.values(info).filter(x => !x.lastOk).length || "";
+}
+function setView(v) {
+  view = v;
+  document.querySelectorAll(".tab").forEach(t => t.setAttribute("aria-selected", t.dataset.view === v));
+  ["practice", "stats", "mistakes"].forEach(k => $("v-" + k).hidden = k !== v);
+  if (v === "stats") renderStats();
+  if (v === "mistakes") renderMistakes();
+  if (v === "practice" && !checked && !$("answer").disabled) $("answer").focus();
+}
+
+function startRound(mode, key) {
+  round = buildRound(mode, key);
+  if (!round.ids.length) { round = buildRound("level", level); }
+  saveAll(); renderLevels(); setView("practice"); showQuestion();
+}
+
+function showQuestion() {
+  if (!round) round = buildRound("level", level);
+  const idx = round.results.length;
+  if (idx >= round.ids.length) return showSummary();
+  $("qa").hidden = false; $("summary").hidden = true;
+  current = prep(BY[round.ids[idx]]);
+  $("tr").textContent = current.tr;
+  $("topic").textContent = T[current.t];
+  const lbl = round.mode === "level" ? (round.key === "MIX" ? `Karışık · ${current.l}` : current.l) : `${round.label} · ${current.l}`;
+  $("lvlTag").textContent = `${lbl} · Tur ${round.no}`;
+  $("progress").textContent = `Soru ${idx + 1} / ${round.ids.length}`;
+  $("roundFill").style.width = `${100 * idx / round.ids.length}%`;
+  $("hint").textContent = ""; hintStep = 0; usedHelp = false;
+  $("result").classList.remove("show");
+  const inp = $("answer"); inp.value = ""; inp.disabled = false;
+  $("main").textContent = "Kontrol et"; checked = false;
+  ["hintBtn", "revealBtn", "skipBtn"].forEach(id => $(id).disabled = false);
+  if (view === "practice") inp.focus();
+}
+
+function record(status, pct, userText, ref, ops) {
+  const e = (ops || []).filter(o => o.type !== "eq" && o.type !== "movedTarget").map(o => ({ y: o.type, u: o.u, r: o.r }));
+  attempts.push({ id: current.id, l: current.l, t: current.t, s: status, p: pct, ts: Date.now(), u: userText, r: ref, e });
+  if (isOk(status)) { meta.streak++; meta.best = Math.max(meta.best, meta.streak); } else meta.streak = 0;
+  round.results.push({ id: current.id, s: status, u: userText, r: ref });
+  if (round.results.length >= round.ids.length && !round.done) {
+    round.done = true;
+    rounds.push({ ts: Date.now(), label: round.label, mode: round.mode, c: round.results.filter(r => isOk(r.s)).length, n: round.results.length });
+  }
+  saveAll(); renderHeader();
+  $("roundFill").style.width = `${100 * round.results.length / round.ids.length}%`;
+}
+
+function evaluate(userText) {
+  const user = normalize(userText);
+  let best = null;
+  current.norm.forEach((ref, k) => { const res = align(user, ref); if (!best || res.cost < best.cost) best = { ...res, k }; });
+  const wrong = best.ops.filter(o => o.type !== "eq");
+  const pct = Math.max(0, Math.round(100 * (1 - best.cost / Math.max(current.norm[best.k].length, user.length, 1))));
+  return { user, best, wrong, perfect: wrong.length === 0, onlyTypos: wrong.length > 0 && wrong.every(o => o.type === "typo"), pct };
+}
+
+function check(mode = "answer") {
+  if (checked) return;
+  const userText = $("answer").value.trim();
+  if (!userText && mode === "answer") { $("answer").focus(); return; }
+  const ev = evaluate(userText);
+  const { best, perfect, onlyTypos, pct, user } = ev;
+
+  let status;
+  if (mode === "reveal") status = "revealed";
+  else if (perfect || onlyTypos) status = usedHelp ? "hint" : (perfect ? "ok" : "typo");
+  else status = "wrong";
+  record(status, mode === "reveal" ? 0 : pct, userText, current.answers[best.k], user.length ? best.ops : []);
+
+  const v = $("verdict");
+  if (status === "revealed") { v.className = "verdict bad"; v.innerHTML = "Cevap gösterildi"; }
+  else if (status === "hint") { v.className = "verdict almost"; v.innerHTML = `✓ Doğru, ama ipucuyla <span class="score">yanlışlara eklendi</span>`; }
+  else if (status === "ok") { v.className = "verdict ok"; v.innerHTML = `✓ Mükemmel! <span class="score">%100</span>`; }
+  else if (status === "typo") { v.className = "verdict almost"; v.innerHTML = `≈ Neredeyse doğru — sadece yazım hatası <span class="score">%${pct}</span>`; }
+  else { v.className = "verdict bad"; v.innerHTML = `✗ Hatalar var <span class="score">%${pct} doğru</span>`; }
+
+  const diff = $("diff");
+  if (!user.length) diff.innerHTML = `<span style="color:var(--muted)">—</span>`;
+  else diff.innerHTML = best.ops.map(tokHtml).join("");
+  $("correct").textContent = current.answers[best.k];
+
+  const notes = [], c = t => best.ops.filter(o => o.type === t);
+  if (user.length) {
+    if (c("sub").length) notes.push(`${c("sub").length} yanlış kelime: ` + c("sub").map(o => `<b>${esc(o.u)}</b> yerine <b>${esc(o.r)}</b>`).join(", "));
+    if (c("typo").length) notes.push(`Yazım hatası: ` + c("typo").map(o => `<b>${esc(o.u)}</b> → <b>${esc(o.r)}</b>`).join(", "));
+    if (c("missing").length) notes.push(`Eksik: ` + c("missing").map(o => `<b>${esc(o.r)}</b>`).join(", "));
+    if (c("extra").length) notes.push(`Fazla: ` + c("extra").map(o => `<b>${esc(o.u)}</b>`).join(", "));
+    if (c("moved").length) notes.push(`Kelime sırası hatalı: ` + c("moved").map(o => `<b>${esc(o.u)}</b>`).join(", "));
+  }
+  $("notes").innerHTML = notes.map(n => `<li>${n}</li>`).join("");
+
+  const others = current.answers.filter((_, k) => k !== best.k);
+  $("alts").hidden = !others.length;
+  $("alts").querySelector("summary").textContent = `Kabul edilen diğer çeviriler (${others.length})`;
+  $("altList").innerHTML = others.slice(0, 12).map(a => `<li>${esc(a)}</li>`).join("") + (others.length > 12 ? `<li>… ve ${others.length - 12} tane daha</li>` : "");
+
+  $("result").classList.add("show");
+  afterAnswer();
+}
+function tokHtml(o) {
+  switch (o.type) {
+    case "eq": return `<span class="tok eq">${esc(o.u)}</span>`;
+    case "sub": return `<span class="tok sub" title="Yanlış kelime"><s>${esc(o.u)}</s><span class="fix">${esc(o.r)}</span></span>`;
+    case "typo": return `<span class="tok typo" title="Yazım hatası"><s>${esc(o.u)}</s><span class="fix">${esc(o.r)}</span></span>`;
+    case "extra": return `<span class="tok extra" title="Fazla kelime">${esc(o.u)}</span>`;
+    case "missing": return `<span class="tok missing" title="Eksik kelime">${esc(o.r)}</span>`;
+    case "moved": return `<span class="tok moved" title="Bu kelime başka bir yerde olmalı">${esc(o.u)} ↷</span>`;
+    case "movedTarget": return `<span class="tok missing" style="color:var(--move);background:var(--move-bg)" title="Taşınması gereken kelime buraya">${esc(o.r)} ↶</span>`;
+  }
+  return "";
+}
+function afterAnswer() {
+  checked = true;
+  $("answer").disabled = true;
+  const last = round.results.length >= round.ids.length;
+  $("main").textContent = last ? "Turu bitir →" : "Sonraki →";
+  ["hintBtn", "revealBtn", "skipBtn"].forEach(id => $(id).disabled = true);
+  $("main").focus();
+}
+function skip() {
+  if (checked) return;
+  record("skipped", 0, "", current.answers[0], []);
+  showQuestion();
+}
+
+function hint() {
+  usedHelp = true;
+  const words = current.answers[0].split(" ");
+  hintStep = Math.min(hintStep + 1, 3);
+  const L = /\p{L}/u;
+  const blank = w => [...w].map(ch => L.test(ch) ? "_" : ch).join("");
+  const firstOnly = w => { let seen = false; return [...w].map(ch => !L.test(ch) ? ch : seen ? "_" : (seen = true, ch)).join(""); };
+  let h;
+  if (hintStep === 1) h = words.map(blank).join(" ");
+  else if (hintStep === 2) h = words.map(firstOnly).join(" ");
+  else h = words.map((w, i) => i < Math.ceil(words.length / 2) ? w : firstOnly(w)).join(" ");
+  $("hint").textContent = h;
+  $("answer").focus();
+}
+
+/* ---------- Tur özeti ---------- */
+function showSummary() {
+  checked = false;
+  $("qa").hidden = true; const box = $("summary"); box.hidden = false;
+  const res = round.results, n = res.length, c = res.filter(r => isOk(r.s)).length;
+  const typos = res.filter(r => r.s === "typo").length;
+  const wrongs = res.filter(r => !isOk(r.s));
+  const byTopic = {};
+  res.forEach(r => { const t = BY[r.id].t; const x = byTopic[t] || (byTopic[t] = { n: 0, w: 0 }); x.n++; if (!isOk(r.s)) x.w++; });
+  const weak = Object.entries(byTopic).filter(([, x]) => x.w).sort((a, b) => b[1].w / b[1].n - a[1].w / a[1].n || b[1].w - a[1].w).slice(0, 4);
+  const msg = c === n ? "Kusursuz tur! 🎉" : c / n >= .8 ? "Harika gidiyorsun." : c / n >= .5 ? "Fena değil, yanlışlarını tekrar et." : "Bu seviye biraz zorlayıcı — yanlışlarını tekrar etmeyi dene.";
+  const nextLevel = round.mode === "level" ? round.key : level;
+  box.innerHTML = `
+    <div class="meta" style="justify-content:center">${esc(round.label)} · Tur ${round.no} tamamlandı</div>
+    <div class="big">${c}<span>/${n}</span></div>
+    <p class="sub">%${Math.round(100 * c / n)} doğruluk${typos ? ` · ${typos} yazım hatası` : ""} · ${esc(msg)}</p>
+    ${weak.length ? `<h3>Bu turda zorlandığın konular</h3><div class="rows">${weak.map(([t, x]) => `
+      <div class="row topicrow"><span class="name" title="${esc(T[t])}">${esc(T[t])}</span>
+      <div class="bar" title="${x.n - x.w}/${x.n} doğru"><i style="width:${100 * (x.n - x.w) / x.n}%"></i></div>
+      <span class="val"><b>${x.n - x.w}</b>/${x.n}</span>
+      <button class="btn ghost small" data-topic="${t}">Çalış</button></div>`).join("")}</div>` : ""}
+    ${wrongs.length ? `<h3>Yanlış yaptıkların (${wrongs.length})</h3><ul class="mlist">${wrongs.map(r => `
+      <li><div class="q">${esc(BY[r.id].tr)}</div>
+      ${r.u ? `<div class="yours">Senin: <s>${esc(r.u)}</s></div>` : `<div class="yours">${esc(STATUS_TR[r.s])}</div>`}
+      <div class="right">Doğru: ${esc(r.r)}</div></li>`).join("")}</ul>` : ""}
+    <div class="actions">
+      <button class="btn" id="newRound">Yeni ${ROUND} soru (${esc(nextLevel === "MIX" ? "Karışık" : nextLevel)})</button>
+      ${wrongs.length ? `<button class="btn ghost" id="retryWrong">Bu turun yanlışlarını tekrar et</button>` : ""}
+      <button class="btn ghost" id="toStats">İstatistiklere bak</button>
+    </div>`;
+  $("newRound").onclick = () => startRound("level", nextLevel);
+  if (wrongs.length) $("retryWrong").onclick = () => startRound("ids", [...new Set(wrongs.map(r => r.id))]);
+  $("toStats").onclick = () => setView("stats");
+  box.querySelectorAll("[data-topic]").forEach(b => b.onclick = () => startRound("topic", b.dataset.topic));
+  $("newRound").focus();
+}
+
+/* ---------- İstatistikler ---------- */
+function analyze() {
+  const typed = attempts.filter(a => a.s !== "revealed" && a.s !== "skipped");
+  const types = { sub: 0, typo: 0, missing: 0, extra: 0, moved: 0 };
+  const pairs = {}, missing = {}, extra = {};
+  for (const a of typed) for (const e of a.e || []) {
+    if (types[e.y] !== undefined) types[e.y]++;
+    if (e.y === "sub" || e.y === "typo") { const k = `${e.u}→${e.r}`; pairs[k] = (pairs[k] || 0) + 1; }
+    if (e.y === "missing") missing[e.r] = (missing[e.r] || 0) + 1;
+    if (e.y === "extra") extra[e.u] = (extra[e.u] || 0) + 1;
+  }
+  const topics = {};
+  for (const a of attempts) { const x = topics[a.t] || (topics[a.t] = { n: 0, ok: 0 }); x.n++; if (isOk(a.s)) x.ok++; }
+  return { types, pairs, missing, extra, topics };
+}
+function tips(an) {
+  const out = [], m = an.missing, sum = ws => ws.reduce((s, w) => s + (m[w] || 0), 0);
+  const subsTo = ws => Object.entries(an.pairs).filter(([k]) => ws.includes(k.split("→")[1])).reduce((s, [, v]) => s + v, 0);
+  if (sum(["a", "an", "the"]) + subsTo(["a", "an", "the"]) >= 3) out.push("<b>Artikeller (a / an / the):</b> Sık atlıyorsun ya da karıştırıyorsun. Türkçede artikel yok; İngilizcede tekil sayılabilir isimlerin önüne mutlaka bir artikel gelir.");
+  if (sum(["am", "is", "are", "was", "were"]) >= 2) out.push("<b>be fiili:</b> “Kedim küçük” gibi cümlelerde <i>is/am/are</i> kullanmayı unutuyorsun. İngilizcede her cümlenin bir fiili olmalı.");
+  if (sum(["have", "has", "had", "been"]) + subsTo(["have", "has", "had", "been"]) >= 2) out.push("<b>Perfect zamanlar:</b> <i>have/has/had + V3</i> yapısında eksiklerin var. “-dır/-dir’den beri”, “hiç … mi?”, “henüz” gibi ifadeler genelde perfect gerektirir.");
+  if (sum(["in", "on", "at", "to", "for", "of", "with", "from", "by", "about"]) + subsTo(["in", "on", "at", "to", "for", "of", "with", "from", "by", "about"]) >= 3) out.push("<b>Edatlar (in / on / at / to / for…):</b> Türkçedeki ekler (-de, -e, -den) İngilizcede ayrı edat olarak yazılır. Edatları kalıp olarak öğrenmek işe yarar.");
+  if (sum(["will", "would"]) + subsTo(["will", "would"]) >= 2) out.push("<b>will / would:</b> Gelecek zaman ve koşul cümlelerinde yardımcı fiili kaçırıyorsun.");
+  if (an.types.moved >= 2) out.push("<b>Kelime sırası:</b> İngilizce <i>Özne + Fiil + Nesne</i> sırasını izler. Türkçedeki gibi fiili sona koymamaya dikkat et.");
+  if (an.types.typo >= 3) out.push("<b>Yazım:</b> Birkaç yazım hatası yaptın. Zorlandığın kelimeleri birkaç kez yazarak tekrar etmek yardımcı olur.");
+  const weak = Object.entries(an.topics).filter(([, x]) => x.n >= 2).sort((a, b) => a[1].ok / a[1].n - b[1].ok / b[1].n)[0];
+  if (weak && weak[1].ok / weak[1].n < .6) out.push(`<b>En zayıf konun: ${esc(T[weak[0]])}</b> (%${Math.round(100 * weak[1].ok / weak[1].n)}). Bu konudan bir tur çözmeyi dene.`);
+  return out;
+}
+function renderStats() {
+  const box = $("v-stats");
+  if (!attempts.length) { box.innerHTML = `<div class="card"><h2>Henüz veri yok</h2><p class="empty">Birkaç soru çözdükten sonra istatistiklerin ve zayıf konuların burada görünecek.</p></div>`; return; }
+  const n = attempts.length, ok = attempts.filter(a => isOk(a.s)).length;
+  const an = analyze(), info = infoMap();
+
+  const levelRows = LEVELS.map(l => {
+    const as = attempts.filter(a => a.l === l), c = as.filter(a => isOk(a.s)).length;
+    const seen = BANK[l].filter(([tr]) => info[tr]).length;
+    return `<div class="row"><span class="name">${l} <small style="color:var(--muted);font-weight:400">${LEVEL_NAMES[l]}</small></span>
+      <div class="bar" title="${as.length ? `${c}/${as.length} doğru` : "henüz soru yok"}"><i style="width:${as.length ? 100 * c / as.length : 0}%"></i></div>
+      <span class="val">${as.length ? `<b>%${Math.round(100 * c / as.length)}</b> · ` : ""}${seen}/${BANK[l].length} cümle görüldü</span></div>`;
+  }).join("");
+
+  const typeNames = { sub: ["Yanlış kelime", "sub"], missing: ["Eksik kelime", "missing"], extra: ["Fazla kelime", "extra"], typo: ["Yazım hatası", "typo"], moved: ["Kelime sırası", "moved"] };
+  const tmax = Math.max(1, ...Object.values(an.types));
+  const typeRows = Object.entries(typeNames).map(([k, [name, cls]]) => `
+    <div class="row"><span class="name"><span class="tok ${cls}" style="padding:0 7px;font-size:13px;text-decoration:none">${name}</span></span>
+    <div class="bar" title="${an.types[k]} kez"><i style="width:${100 * an.types[k] / tmax}%"></i></div>
+    <span class="val"><b>${an.types[k]}</b> kez</span></div>`).join("");
+
+  const topicList = Object.entries(an.topics).map(([t, x]) => ({ t, ...x, acc: x.ok / x.n })).sort((a, b) => a.acc - b.acc || b.n - a.n);
+  const topicRows = topicList.map(x => `
+    <div class="row topicrow"><span class="name" title="${esc(T[x.t])}">${esc(T[x.t])}</span>
+    <div class="bar" title="${x.ok}/${x.n} doğru"><i style="width:${100 * x.acc}%"></i></div>
+    <span class="val"><b>%${Math.round(100 * x.acc)}</b> · ${x.n} soru</span>
+    <button class="btn ghost small" data-topic="${x.t}">Çalış</button></div>`).join("");
+
+  const top = (obj, k = 12) => Object.entries(obj).sort((a, b) => b[1] - a[1]).slice(0, k);
+  const pairs = top(an.pairs), miss = top(an.missing), ext = top(an.extra);
+  const tipList = tips(an);
+  const recent = rounds.slice(-8).reverse();
+  const fmt = ts => new Date(ts).toLocaleString("tr-TR", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
+
+  box.innerHTML = `
+    <div class="tiles">
+      <div class="tile"><div class="v">${n}</div><div class="k">cevaplanan soru</div></div>
+      <div class="tile"><div class="v">%${Math.round(100 * ok / n)}</div><div class="k">genel doğruluk</div></div>
+      <div class="tile"><div class="v">${rounds.length}</div><div class="k">tamamlanan tur</div></div>
+      <div class="tile"><div class="v">${meta.best}</div><div class="k">en iyi seri</div></div>
+    </div>
+
+    <div class="card panel">
+      <h2>Çalışman gereken yerler</h2>
+      ${tipList.length ? `<ul class="tips">${tipList.map(t => `<li>${t}</li>`).join("")}</ul>` : `<p class="empty">Belirgin bir zayıf nokta yok. Daha fazla soru çözdükçe öneriler burada çıkacak.</p>`}
+      <div class="actions" style="margin-top:14px;display:flex;gap:8px;flex-wrap:wrap">
+        ${Object.values(info).some(x => !x.lastOk) ? `<button class="btn small" id="stMistakes">Yanlışlarımı tekrar et</button>` : ""}
+        ${topicList[0] && topicList[0].acc < 1 ? `<button class="btn ghost small" data-topic="${topicList[0].t}">En zayıf konuyu çalış: ${esc(T[topicList[0].t])}</button>` : ""}
+      </div>
+    </div>
+
+    <div class="card panel">
+      <h2>Konulara göre başarı</h2>
+      <p class="empty" style="margin-top:-6px;margin-bottom:12px">En zayıftan en güçlüye doğru sıralı.</p>
+      <div class="rows">${topicRows}</div>
+    </div>
+
+    <div class="card panel">
+      <h2>Seviyelere göre</h2>
+      <div class="rows">${levelRows}</div>
+    </div>
+
+    <div class="card panel">
+      <h2>Hata türleri</h2>
+      <div class="rows">${typeRows}</div>
+      <div class="two">
+        <div><h3>Sık karıştırdığın kelimeler</h3>
+          ${pairs.length ? `<div class="words">${pairs.map(([k, v]) => { const [u, r] = k.split("→"); return `<span class="tok sub"><s>${esc(u)}</s><span class="fix">${esc(r)}</span><span class="n">×${v}</span></span>`; }).join("")}</div>` : `<p class="empty">Yok</p>`}</div>
+        <div><h3>Sık unuttuğun kelimeler</h3>
+          ${miss.length ? `<div class="words">${miss.map(([w, v]) => `<span class="tok missing">${esc(w)} <span class="n">×${v}</span></span>`).join("")}</div>` : `<p class="empty">Yok</p>`}</div>
+      </div>
+      ${ext.length ? `<h3>Fazladan yazdıkların</h3><div class="words">${ext.map(([w, v]) => `<span class="tok extra">${esc(w)}</span><span class="n" style="color:var(--muted);font-size:12px;align-self:center">×${v}</span>`).join("")}</div>` : ""}
+    </div>
+
+    <div class="card panel">
+      <h2>Son turlar</h2>
+      ${recent.length ? `<div class="rows">${recent.map(r => `
+        <div class="row"><span class="name">${esc(r.label)}</span>
+        <div class="bar" title="${r.c}/${r.n} doğru"><i style="width:${100 * r.c / r.n}%"></i></div>
+        <span class="val"><b>${r.c}/${r.n}</b> · ${fmt(r.ts)}</span></div>`).join("")}</div>` : `<p class="empty">Henüz tamamlanmış bir tur yok. ${ROUND} soruyu bitirince burada görünecek.</p>`}
+    </div>`;
+  box.querySelectorAll("[data-topic]").forEach(b => b.onclick = () => startRound("topic", b.dataset.topic));
+  const sm = $("stMistakes"); if (sm) sm.onclick = () => startRound("mistakes");
+}
+
+/* ---------- Yanlışlarım ---------- */
+function renderMistakes() {
+  const box = $("v-mistakes"), info = infoMap();
+  const list = Object.entries(info).filter(([id, x]) => !x.lastOk && BY[id]).sort((a, b) => b[1].last - a[1].last);
+  if (!list.length) { box.innerHTML = `<div class="card"><h2>Yanlışın yok 🎉</h2><p class="empty">Yanlış yaptığın, atladığın ya da ipucuyla çözdüğün cümleler burada toplanır. Bir sonraki denemede doğru yaparsan listeden çıkar.</p></div>`; return; }
+  box.innerHTML = `<div class="card">
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:8px">
+      <h2 style="margin:0">Yanlışlarım (${list.length})</h2>
+      <button class="btn small" id="mRetry">Bunları tekrar et${list.length > ROUND ? ` (${ROUND} tanesi)` : ""}</button>
+    </div>
+    <p class="empty" style="margin-bottom:10px">Son denemende yanlış yaptığın cümleler. Doğru yaptığında listeden çıkar.</p>
+    <ul class="mlist">${list.map(([id, x]) => { const a = x.lastA, s = BY[id]; return `
+      <li><div class="q">${esc(s.tr)}</div>
+      ${a.u ? `<div class="yours">Senin: <s>${esc(a.u)}</s></div>` : `<div class="yours">${esc(STATUS_TR[a.s])}</div>`}
+      <div class="right">Doğru: ${esc(a.r)}</div>
+      <div class="chips"><span class="chip">${s.l}</span><span class="chip">${esc(T[s.t])}</span>${x.wrong > 1 ? `<span class="chip">${x.wrong} kez yanlış</span>` : ""}</div></li>`; }).join("")}</ul></div>`;
+  $("mRetry").onclick = () => startRound("mistakes");
+}
+
+/* ---------- Olaylar ---------- */
+$("main").onclick = () => {
+  if (!checked) return check();
+  showQuestion();
+};
+$("answer").addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); e.stopPropagation(); check(); } });
+document.addEventListener("keydown", e => {
+  if (e.key === "Enter" && checked && view === "practice") { e.preventDefault(); showQuestion(); }
+});
+$("hintBtn").onclick = hint;
+$("revealBtn").onclick = () => check("reveal");
+$("skipBtn").onclick = skip;
+document.querySelectorAll(".tab").forEach(t => t.onclick = () => setView(t.dataset.view));
+$("resetBtn").onclick = () => {
+  if (!confirm("Tüm istatistikler, yanlışlar ve tur geçmişi silinecek. Emin misin?")) return;
+  attempts = []; rounds = []; meta = { streak: 0, best: 0 }; round = buildRound("level", level);
+  saveAll(); renderHeader(); renderLevels(); setView("practice"); showQuestion();
+};
+
+if (!round) round = buildRound("level", level);
+saveAll(); renderLevels(); renderHeader(); showQuestion();
+</script>
+</body>
+</html>
